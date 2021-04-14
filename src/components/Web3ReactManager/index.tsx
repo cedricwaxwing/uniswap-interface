@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useWeb3React } from '@web3-react/core'
 import styled from 'styled-components'
 import { useTranslation } from 'react-i18next'
-
 import { network } from '../../connectors'
 import { useEagerConnect, useInactiveListener } from '../../hooks'
 import { NetworkContextName } from '../../constants'
 import Loader from '../Loader'
+import { UriRedirect } from '@web3api/client-js'
+import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
+import { Web3ApiProvider } from '@web3api/react'
 
 const MessageWrapper = styled.div`
   display: flex;
@@ -22,7 +24,24 @@ const Message = styled.h2`
 export default function Web3ReactManager({ children }: { children: JSX.Element }) {
   const { t } = useTranslation()
   const { active } = useWeb3React()
-  const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
+  const { active: networkActive, error: networkError, activate: activateNetwork, library } = useWeb3React(NetworkContextName)
+
+  // Web3API integration.
+    const [redirects, setRedirects] = useState<UriRedirect[]>(
+    library
+      ? [
+          {
+            from: 'ens/ethereum.web3api.eth',
+            to: ethereumPlugin({
+              networks: {
+                provider: library
+              }
+            })
+          }
+        ]
+      : []
+  )
+
 
   // try to eagerly connect to an injected provider, if it exists and has granted access already
   const triedEager = useEagerConnect()
@@ -72,5 +91,6 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
     ) : null
   }
 
-  return children
+  return 
+  <Web3ApiProvider redirects={redirects}>{children}</Web3ApiProvider>
 }
