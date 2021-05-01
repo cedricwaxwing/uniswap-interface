@@ -49,9 +49,39 @@ import { useIsTransactionUnsupported } from 'hooks/Trades'
 import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter'
 import { isTradeBetter } from 'utils/trades'
 import { RouteComponentProps } from 'react-router-dom'
+import { useWeb3ApiQuery } from '@web3api/react'
 
 export default function Swap({ history }: RouteComponentProps) {
   const loadedUrlParams = useDefaultsFromURLSearch()
+
+  const BAT = {
+    chainId: 1,
+    address: '0x0D8775F648430679A709E98d2b0Cb6250d2887EF',
+    currency: {
+      decimals: 18,
+      symbol: 'BAT',
+      name: 'BasicAttentionToken'
+    }
+  }
+
+  // Expect to return true.
+  const { execute } = useWeb3ApiQuery({
+    uri: 'w3://ipfs/Qm<Hash>',
+    query: `query {
+      tokenEquals(
+        token: ${BAT},
+        other: ${BAT}
+      )
+  }`
+  })
+
+  useEffect(() => {
+    const testWeb3API = async () => {
+      const tokenEqualsTest = await execute()
+      console.log('%ctestWeb3API', 'color: red', tokenEqualsTest)
+    }
+    testWeb3API()
+  }, [])
 
   // token warning stuff
   const [loadedInputCurrency, loadedOutputCurrency] = [

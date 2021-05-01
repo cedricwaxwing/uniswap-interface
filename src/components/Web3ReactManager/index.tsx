@@ -8,6 +8,7 @@ import { NetworkContextName } from '../../constants'
 import Loader from '../Loader'
 import { UriRedirect } from '@web3api/client-js'
 import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
+import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 import { Web3ApiProvider } from '@web3api/react'
 
 const MessageWrapper = styled.div`
@@ -24,24 +25,30 @@ const Message = styled.h2`
 export default function Web3ReactManager({ children }: { children: JSX.Element }) {
   const { t } = useTranslation()
   const { active } = useWeb3React()
-  const { active: networkActive, error: networkError, activate: activateNetwork, library } = useWeb3React(NetworkContextName)
-
-  // Web3API integration.
-    const [redirects, setRedirects] = useState<UriRedirect[]>(
-    library
-      ? [
-          {
-            from: 'ens/ethereum.web3api.eth',
-            to: ethereumPlugin({
-              networks: {
-                provider: library
-              }
-            })
-          }
-        ]
-      : []
+  const { active: networkActive, error: networkError, activate: activateNetwork, library } = useWeb3React(
+    NetworkContextName
   )
 
+  // Web3API integration.
+  const [redirects] = useState<UriRedirect[]>([
+    {
+      from: 'ens/ethereum.web3api.eth',
+      to: ethereumPlugin({
+        networks: {
+          provider: library
+        }
+      })
+    },
+    {
+      from: 'ens/ipfs.web3api.eth',
+      to: ipfsPlugin({
+        provider: 'ipfs.io',
+        fallbackProviders: ['localhost:5001']
+      })
+    }
+  ])
+
+  console.log('%credirects', 'color: red', redirects)
 
   // try to eagerly connect to an injected provider, if it exists and has granted access already
   const triedEager = useEagerConnect()
@@ -91,6 +98,5 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
     ) : null
   }
 
-  return 
-  <Web3ApiProvider redirects={redirects}>{children}</Web3ApiProvider>
+  return <Web3ApiProvider redirects={redirects}>{children}</Web3ApiProvider>
 }
