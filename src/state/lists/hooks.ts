@@ -61,7 +61,10 @@ export function listToTokenMap(list: TokenList): TokenAddressMap {
           })
           ?.filter((x): x is TagInfo => Boolean(x)) ?? []
       const token = new WrappedTokenInfo(tokenInfo, tags)
-      if (tokenMap[token.chainId][token.address] !== undefined) throw Error('Duplicate tokens.')
+      if (tokenMap[token.chainId][token.address] !== undefined) {
+        console.error(new Error(`Duplicate token! ${token.address}`))
+        return tokenMap
+      }
       return {
         ...tokenMap,
         [token.chainId]: {
@@ -103,10 +106,8 @@ function combineMaps(map1: TokenAddressMap, map2: TokenAddressMap): TokenAddress
 // merge tokens contained within lists from urls
 function useCombinedTokenMapFromUrls(urls: string[] | undefined): TokenAddressMap {
   const lists = useAllLists()
-
   return useMemo(() => {
     if (!urls) return EMPTY_LIST
-
     return (
       urls
         .slice()
