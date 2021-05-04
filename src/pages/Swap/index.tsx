@@ -75,7 +75,7 @@ export default function Swap({ history }: RouteComponentProps) {
      }`,
     variables: {
       token: BAT,
-      other: BAT,
+      other: BAT
     }
   })
 
@@ -162,6 +162,17 @@ export default function Swap({ history }: RouteComponentProps) {
       }
 
   const { onSwitchTokens, onCurrencySelection, onUserInput, onChangeRecipient } = useSwapActionHandlers()
+
+  /**
+   *  useSwapActionHandlers()
+   *  - onSwitchTokens
+   *  - -
+   *  - onCurrencySelection
+   *  - onUserInput
+   *  - - Handles field i/o token amounts
+   *  - onChangeRecipient
+   *  */
+
   const isValid = !swapInputError
   const dependentField: Field = independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT
 
