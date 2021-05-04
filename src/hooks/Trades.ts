@@ -2,7 +2,7 @@ import { isTradeBetter } from 'utils/trades'
 import { Currency, CurrencyAmount, Pair, Token, Trade } from '@uniswap/sdk'
 import flatMap from 'lodash.flatmap'
 import { useMemo } from 'react'
-import { useWeb3ApiQuery } from '@web3api/react'
+// import { useWeb3ApiQuery } from '@web3api/react'
 
 import {
   BASES_TO_CHECK_TRADES_AGAINST,
@@ -12,7 +12,7 @@ import {
 } from '../constants'
 import { PairState, usePairs } from '../data/Reserves'
 import { wrappedCurrency } from '../utils/wrappedCurrency'
-import { mapPairs } from "../web3api/mapping";
+// import { mapPairs } from '../web3api/mapping'
 
 import { useActiveWeb3React } from './index'
 import { useUnsupportedTokens } from './Tokens'
@@ -98,20 +98,22 @@ const MAX_HOPS = 3
  * Returns the best trade for the exact amount of tokens in to the given token out
  */
 export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?: Currency): Trade | null {
-  const allowedPairs = mapPairs(useAllCommonPairs(currencyAmountIn?.currency, currencyOut));
+  const allowedPairs = useAllCommonPairs(currencyAmountIn?.currency, currencyOut)
+  //  const allowedPairs = mapPairs(useAllCommonPairs(currencyAmountIn?.currency, currencyOut))
+  console.log('allowedPairs', allowedPairs)
 
-  const { execute: bestTradeExactIn } = useWeb3ApiQuery({
-    uri: 'ipfs/QmRQuz7KDtRAYXyZo7GMXedJkrAT2uUTE1isJCEZ5Wz9T3/',
-    query: `query {
-      bestTradeExactIn(
-        pairs: $pairs,
-        
-       )
-     }`,
-    variables: {
-      pairs: allowedPairs,
-    }
-  });
+  // const { execute: bestTradeExactIn } = useWeb3ApiQuery({
+  //   uri: 'ipfs/QmRQuz7KDtRAYXyZo7GMXedJkrAT2uUTE1isJCEZ5Wz9T3/',
+  //   query: `query {
+  //     bestTradeExactIn(
+  //       pairs: $pairs,
+
+  //      )
+  //    }`,
+  //   variables: {
+  //     pairs: allowedPairs
+  //   }
+  // })
 
   const [singleHopOnly] = useUserSingleHopOnly()
 
@@ -119,7 +121,7 @@ export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?:
     if (currencyAmountIn && currencyOut && allowedPairs.length > 0) {
       if (singleHopOnly) {
         return (
-          bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: 1, maxNumResults: 1 })[0] ??
+          Trade.bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: 1, maxNumResults: 1 })[0] ??
           null
         )
       }
@@ -127,7 +129,7 @@ export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?:
       let bestTradeSoFar: Trade | null = null
       for (let i = 1; i <= MAX_HOPS; i++) {
         const currentTrade: Trade | null =
-          bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: i, maxNumResults: 1 })[0] ??
+          Trade.bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: i, maxNumResults: 1 })[0] ??
           null
         // if current trade is best yet, save it
         if (isTradeBetter(bestTradeSoFar, currentTrade, BETTER_TRADE_LESS_HOPS_THRESHOLD)) {

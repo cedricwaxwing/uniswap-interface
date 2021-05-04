@@ -29,6 +29,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
 
   // Web3API integration.
   // TODO: Based on current provider, add it to the network object.
+  // Could use ChainId in `networks` object
   const [redirects] = useState<UriRedirect[]>([
     {
       from: 'ens/ethereum.web3api.eth',
