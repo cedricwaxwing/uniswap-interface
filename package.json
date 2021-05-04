@@ -103,7 +103,10 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
-    "integration-test": "start-server-and-test 'serve build -l 3000' http://localhost:3000 'cypress run'"
+    "integration-test": "start-server-and-test 'serve build -l 3000' http://localhost:3000 'cypress run'",
+    "prebuild": "yarn install:web3api",
+    "prestart": "yarn install:web3api",
+    "install:web3api": "npx web3api-worker-install ./public"
   },
   "eslintConfig": {
     "extends": "react-app",
