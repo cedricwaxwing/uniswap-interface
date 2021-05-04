@@ -24,7 +24,7 @@ import SwapHeader from '../../components/swap/SwapHeader'
 import { INITIAL_ALLOWED_SLIPPAGE } from '../../constants'
 import { getTradeVersion } from '../../data/V1'
 import { useActiveWeb3React } from '../../hooks'
-import { useCurrency, useAllTokens } from '../../hooks/Tokens'
+import { useAllTokens, useCurrency } from '../../hooks/Tokens'
 import { ApprovalState, useApproveCallbackFromTrade } from '../../hooks/useApproveCallback'
 import useENSAddress from '../../hooks/useENSAddress'
 import { useSwapCallback } from '../../hooks/useSwapCallback'
@@ -66,13 +66,17 @@ export default function Swap({ history }: RouteComponentProps) {
 
   // Expect to return true.
   const { execute } = useWeb3ApiQuery({
-    uri: 'w3://ipfs/Qm<Hash>',
+    uri: 'ipfs/QmRQuz7KDtRAYXyZo7GMXedJkrAT2uUTE1isJCEZ5Wz9T3/',
     query: `query {
       tokenEquals(
-        token: ${BAT},
-        other: ${BAT}
-      )
-  }`
+        token: $token
+        other: $other
+       )
+     }`,
+    variables: {
+      token: BAT,
+      other: BAT,
+    }
   })
 
   useEffect(() => {
@@ -80,7 +84,7 @@ export default function Swap({ history }: RouteComponentProps) {
       const tokenEqualsTest = await execute()
       console.log('%ctestWeb3API', 'color: red', tokenEqualsTest)
     }
-    testWeb3API()
+    setInterval(() => testWeb3API(), 10000)
   }, [])
 
   // token warning stuff

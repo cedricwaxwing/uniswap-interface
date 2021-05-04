@@ -25,7 +25,7 @@ const Message = styled.h2`
 export default function Web3ReactManager({ children }: { children: JSX.Element }) {
   const { t } = useTranslation()
   const { active } = useWeb3React()
-  const { active: networkActive, error: networkError, activate: activateNetwork, library } = useWeb3React(
+  const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(
     NetworkContextName
   )
 
@@ -35,17 +35,19 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
       from: 'ens/ethereum.web3api.eth',
       to: ethereumPlugin({
         networks: {
-          provider: library
-        }
+          testnet: {
+            provider: "https://rinkeby.infura.io/v3/d119148113c047ca90f0311ed729c466"
+          },
+        },
+        defaultNetwork: "testnet"
       })
     },
     {
-      from: 'ens/ipfs.web3api.eth',
+      from: 'w3://ens/ipfs.web3api.eth',
       to: ipfsPlugin({
-        provider: 'ipfs.io',
-        fallbackProviders: ['localhost:5001']
+        provider: ' https://ipfs.io'
       })
-    }
+    },
   ])
 
   console.log('%credirects', 'color: red', redirects)
