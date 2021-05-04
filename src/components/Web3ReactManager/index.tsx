@@ -25,21 +25,20 @@ const Message = styled.h2`
 export default function Web3ReactManager({ children }: { children: JSX.Element }) {
   const { t } = useTranslation()
   const { active } = useWeb3React()
-  const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(
-    NetworkContextName
-  )
+  const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
 
   // Web3API integration.
+  // TODO: Based on current provider, add it to the network object.
   const [redirects] = useState<UriRedirect[]>([
     {
       from: 'ens/ethereum.web3api.eth',
       to: ethereumPlugin({
         networks: {
           testnet: {
-            provider: "https://rinkeby.infura.io/v3/d119148113c047ca90f0311ed729c466"
-          },
+            provider: 'https://rinkeby.infura.io/v3/d119148113c047ca90f0311ed729c466'
+          }
         },
-        defaultNetwork: "testnet"
+        defaultNetwork: 'testnet'
       })
     },
     {
@@ -47,7 +46,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
       to: ipfsPlugin({
         provider: ' https://ipfs.io'
       })
-    },
+    }
   ])
 
   console.log('%credirects', 'color: red', redirects)

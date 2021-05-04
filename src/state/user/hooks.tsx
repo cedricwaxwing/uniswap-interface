@@ -3,7 +3,6 @@ import flatMap from 'lodash.flatmap'
 import { useCallback, useMemo } from 'react'
 import { shallowEqual, useDispatch, useSelector } from 'react-redux'
 import { BASES_TO_TRACK_LIQUIDITY_FOR, PINNED_PAIRS } from '../../constants'
-
 import { useActiveWeb3React } from '../../hooks'
 import { useAllTokens } from '../../hooks/Tokens'
 import { AppDispatch, AppState } from '../index'
@@ -255,6 +254,7 @@ export function useTrackedTokenPairs(): [Token, Token][] {
     // dedupes pairs of tokens in the combined list
     const keyed = combinedList.reduce<{ [key: string]: [Token, Token] }>((memo, [tokenA, tokenB]) => {
       const sorted = tokenA.sortsBefore(tokenB)
+
       const key = sorted ? `${tokenA.address}:${tokenB.address}` : `${tokenB.address}:${tokenA.address}`
       if (memo[key]) return memo
       memo[key] = sorted ? [tokenA, tokenB] : [tokenB, tokenA]

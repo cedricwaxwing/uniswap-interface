@@ -2,6 +2,7 @@ import { isTradeBetter } from 'utils/trades'
 import { Currency, CurrencyAmount, Pair, Token, Trade } from '@uniswap/sdk'
 import flatMap from 'lodash.flatmap'
 import { useMemo } from 'react'
+import { useWeb3ApiQuery } from '@web3api/react'
 
 import {
   BASES_TO_CHECK_TRADES_AGAINST,
@@ -96,7 +97,25 @@ const MAX_HOPS = 3
  * Returns the best trade for the exact amount of tokens in to the given token out
  */
 export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?: Currency): Trade | null {
-  const allowedPairs = useAllCommonPairs(currencyAmountIn?.currency, currencyOut)
+  const allowedPairs = useAllCommonPairs(currencyAmountIn?.currency, currencyOut).map((pair: Pair) => {
+    pair.token0
+  })
+
+  // Map over common pairs to use .toExact() method on each Token.
+
+  const { execute } = useWeb3ApiQuery({
+    uri: 'ipfs/QmRQuz7KDtRAYXyZo7GMXedJkrAT2uUTE1isJCEZ5Wz9T3/',
+    query: `query {
+      bestTradeExactIn(
+        pairs: [],
+        
+       )
+     }`,
+    variables: {
+      token: allowedPairs,
+      other: BAT
+    }
+  })
 
   const [singleHopOnly] = useUserSingleHopOnly()
 
