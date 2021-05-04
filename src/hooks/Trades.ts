@@ -12,6 +12,7 @@ import {
 } from '../constants'
 import { PairState, usePairs } from '../data/Reserves'
 import { wrappedCurrency } from '../utils/wrappedCurrency'
+import { mapPairs } from "../web3api/mapping";
 
 import { useActiveWeb3React } from './index'
 import { useUnsupportedTokens } from './Tokens'
@@ -97,25 +98,20 @@ const MAX_HOPS = 3
  * Returns the best trade for the exact amount of tokens in to the given token out
  */
 export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?: Currency): Trade | null {
-  const allowedPairs = useAllCommonPairs(currencyAmountIn?.currency, currencyOut).map((pair: Pair) => {
-    pair.token0
-  })
+  const allowedPairs = mapPairs(useAllCommonPairs(currencyAmountIn?.currency, currencyOut));
 
-  // Map over common pairs to use .toExact() method on each Token.
-
-  const { execute } = useWeb3ApiQuery({
+  const { execute: bestTradeExactIn } = useWeb3ApiQuery({
     uri: 'ipfs/QmRQuz7KDtRAYXyZo7GMXedJkrAT2uUTE1isJCEZ5Wz9T3/',
     query: `query {
       bestTradeExactIn(
-        pairs: [],
+        pairs: $pairs,
         
        )
      }`,
     variables: {
-      token: allowedPairs,
-      other: BAT
+      pairs: allowedPairs,
     }
-  })
+  });
 
   const [singleHopOnly] = useUserSingleHopOnly()
 
@@ -123,7 +119,7 @@ export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?:
     if (currencyAmountIn && currencyOut && allowedPairs.length > 0) {
       if (singleHopOnly) {
         return (
-          Trade.bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: 1, maxNumResults: 1 })[0] ??
+          bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: 1, maxNumResults: 1 })[0] ??
           null
         )
       }
@@ -131,7 +127,7 @@ export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?:
       let bestTradeSoFar: Trade | null = null
       for (let i = 1; i <= MAX_HOPS; i++) {
         const currentTrade: Trade | null =
-          Trade.bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: i, maxNumResults: 1 })[0] ??
+          bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: i, maxNumResults: 1 })[0] ??
           null
         // if current trade is best yet, save it
         if (isTradeBetter(bestTradeSoFar, currentTrade, BETTER_TRADE_LESS_HOPS_THRESHOLD)) {
