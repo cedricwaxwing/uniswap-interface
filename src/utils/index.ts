@@ -7,6 +7,7 @@ import { abi as IUniswapV2Router02ABI } from '@uniswap/v2-periphery/build/IUnisw
 import { ROUTER_ADDRESS } from '../constants'
 import { ChainId, JSBI, Percent, Token, CurrencyAmount, Currency, ETHER } from '@uniswap/sdk'
 import { TokenAddressMap } from '../state/lists/hooks'
+import Decimal from 'decimal.js-light'
 
 // returns the checksummed address if the address is valid, otherwise returns false
 export function isAddress(value: any): string | false {
@@ -66,6 +67,10 @@ export function calculateGasMargin(value: BigNumber): BigNumber {
 // converts a basis points value to a sdk percent
 export function basisPointsToPercent(num: number): Percent {
   return new Percent(JSBI.BigInt(num), JSBI.BigInt(10000))
+}
+
+export function w3BasisPointsToPercent(num: number): Decimal {
+  return new Decimal(num).div(10000)
 }
 
 export function calculateSlippageAmount(value: CurrencyAmount, slippage: number): [JSBI, JSBI] {

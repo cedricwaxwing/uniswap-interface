@@ -130,6 +130,8 @@
   "dependencies": {
     "@uniswap/default-token-list": "^2.0.0",
     "@web3api/client-js": "^0.0.1-prealpha.21",
-    "@web3api/react": "^0.0.1-prealpha.21"
+    "@web3api/react": "^0.0.1-prealpha.21",
+    "react-async-hook": "^3.6.2",
+    "decimal.js-light": "^2.5.0"
   }
 }

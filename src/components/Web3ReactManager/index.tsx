@@ -7,9 +7,9 @@ import { useEagerConnect, useInactiveListener } from '../../hooks'
 import { NetworkContextName } from '../../constants'
 import Loader from '../Loader'
 import { UriRedirect } from '@web3api/client-js'
-import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
 import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 import { Web3ApiProvider } from '@web3api/react'
+import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
 
 const MessageWrapper = styled.div`
   display: flex;
@@ -28,20 +28,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
   const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
 
   // Web3API integration.
-  // TODO: Based on current provider, add it to the network object.
-  // Could use ChainId in `networks` object
-  const [redirects] = useState<UriRedirect[]>([
-    {
-      from: 'ens/ethereum.web3api.eth',
-      to: ethereumPlugin({
-        networks: {
-          testnet: {
-            provider: 'https://rinkeby.infura.io/v3/d119148113c047ca90f0311ed729c466'
-          }
-        },
-        defaultNetwork: 'testnet'
-      })
-    },
+  const [redirects, setRedirects] = useState<UriRedirect[]>([
     {
       from: 'w3://ens/ipfs.web3api.eth',
       to: ipfsPlugin({
@@ -49,8 +36,6 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
       })
     }
   ])
-
-  console.log('%credirects', 'color: red', redirects)
 
   // try to eagerly connect to an injected provider, if it exists and has granted access already
   const triedEager = useEagerConnect()
@@ -60,6 +45,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
     if (triedEager && !networkActive && !networkError && !active) {
       activateNetwork(network)
     }
+    setRedirects(Web3ApiClientManager.setProvider(network.provider.url))
   }, [triedEager, networkActive, networkError, activateNetwork, active])
 
   // when there's no account connected, react to logins (broadly speaking) on the injected provider, if it exists

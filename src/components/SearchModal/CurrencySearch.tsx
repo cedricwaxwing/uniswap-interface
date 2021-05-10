@@ -23,6 +23,7 @@ import useTheme from 'hooks/useTheme'
 import ImportRow from './ImportRow'
 import { Edit } from 'react-feather'
 import useDebounce from 'hooks/useDebounce'
+import { mapToken, reverseMapToken } from '../../web3api/mapping'
 
 const ContentWrapper = styled(Column)`
   width: 100%;
@@ -100,14 +101,16 @@ export function CurrencySearch({
   const tokenComparator = useTokenComparator(invertSearchOrder)
 
   const filteredTokens: Token[] = useMemo(() => {
-    return filterTokens(Object.values(allTokens), debouncedQuery)
+    return filterTokens(Object.values(allTokens).map(mapToken), debouncedQuery).map(v => reverseMapToken(v)!)
   }, [allTokens, debouncedQuery])
 
   const sortedTokens: Token[] = useMemo(() => {
     return filteredTokens.sort(tokenComparator)
   }, [filteredTokens, tokenComparator])
 
-  const filteredSortedTokens = useSortedTokensByQuery(sortedTokens, debouncedQuery)
+  const filteredSortedTokens = useSortedTokensByQuery(sortedTokens.map(mapToken), debouncedQuery).map(
+    v => reverseMapToken(v)!
+  )
 
   const handleCurrencySelect = useCallback(
     (currency: Currency) => {
@@ -157,7 +160,9 @@ export function CurrencySearch({
 
   // if no results on main list, show option to expand into inactive
   const inactiveTokens = useFoundOnInactiveList(debouncedQuery)
-  const filteredInactiveTokens: Token[] = useSortedTokensByQuery(inactiveTokens, debouncedQuery)
+  const filteredInactiveTokens: Token[] = useSortedTokensByQuery(inactiveTokens?.map(mapToken), debouncedQuery).map(
+    v => reverseMapToken(v)!
+  )
 
   return (
     <ContentWrapper>

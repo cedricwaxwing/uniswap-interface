@@ -10,6 +10,7 @@ import { AppDispatch, AppState } from '../index'
 import { tryParseAmount } from '../swap/hooks'
 import { useCurrencyBalances } from '../wallet/hooks'
 import { Field, typeInput } from './actions'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const ZERO = JSBI.BigInt(0)
 
@@ -93,11 +94,13 @@ export function useDerivedMintInfo(
   }
 
   // amounts
-  const independentAmount: CurrencyAmount | undefined = tryParseAmount(typedValue, currencies[independentField])
+  const independentAmount: CurrencyAmount | undefined = currencies[independentField]
+    ? reverseMapTokenAmount(tryParseAmount(typedValue, mapToken(currencies[independentField]!)))
+    : undefined
   const dependentAmount: CurrencyAmount | undefined = useMemo(() => {
     if (noLiquidity) {
       if (otherTypedValue && currencies[dependentField]) {
-        return tryParseAmount(otherTypedValue, currencies[dependentField])
+        return reverseMapTokenAmount(tryParseAmount(otherTypedValue, mapToken(currencies[dependentField]!)))
       }
       return undefined
     } else if (independentAmount) {

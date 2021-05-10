@@ -1,23 +1,26 @@
 import useENS from '../../hooks/useENS'
-import { Version } from '../../hooks/useToggledVersion'
+import useToggledVersion, { Version } from '../../hooks/useToggledVersion'
 import { parseUnits } from '@ethersproject/units'
-import { Currency, CurrencyAmount, ETHER, JSBI, Token, TokenAmount, Trade } from '@uniswap/sdk'
+import { Currency, ETHER, Pair, Token } from '@uniswap/sdk'
 import { ParsedQs } from 'qs'
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useV1Trade } from '../../data/V1'
 import { useActiveWeb3React } from '../../hooks'
-import { useCurrency } from '../../hooks/Tokens'
-import { useTradeExactIn, useTradeExactOut } from '../../hooks/Trades'
+import { useCurrency } from '../../hooks/W3Tokens'
+import { useTradeExactIn, useTradeExactOut } from '../../hooks/W3Trades'
 import useParsedQueryString from '../../hooks/useParsedQueryString'
 import { isAddress } from '../../utils'
 import { AppDispatch, AppState } from '../index'
 import { useCurrencyBalances } from '../wallet/hooks'
 import { Field, replaceSwapState, selectCurrency, setRecipient, switchCurrencies, typeInput } from './actions'
 import { SwapState } from './reducer'
-import useToggledVersion from '../../hooks/useToggledVersion'
+import { w3ComputeSlippageAdjustedAmounts } from '../../utils/prices'
+import { W3Pair, W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
+import { mapTokenAmount, mapTrade, reverseMapToken, reverseMapTokenAmount } from '../../web3api/mapping'
+import Decimal from 'decimal.js-light'
 import { useUserSlippageTolerance } from '../user/hooks'
-import { computeSlippageAdjustedAmounts } from '../../utils/prices'
+import { useAsync } from 'react-async-hook'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
@@ -69,16 +72,17 @@ export function useSwapActionHandlers(): {
 }
 
 // try to parse a user entered amount for a given token
-export function tryParseAmount(value?: string, currency?: Currency): CurrencyAmount | undefined {
+export function tryParseAmount(value?: string, currency?: W3Token): W3TokenAmount | undefined {
   if (!value || !currency) {
     return undefined
   }
   try {
-    const typedValueParsed = parseUnits(value, currency.decimals).toString()
+    const typedValueParsed = parseUnits(value, currency.currency.decimals).toString()
     if (typedValueParsed !== '0') {
-      return currency instanceof Token
-        ? new TokenAmount(currency, JSBI.BigInt(typedValueParsed))
-        : CurrencyAmount.ether(JSBI.BigInt(typedValueParsed))
+      return {
+        token: currency,
+        amount: typedValueParsed
+      }
     }
   } catch (error) {
     // should fail if the user specifies too many decimal places of precision (or maybe exceed max uint?)
@@ -99,22 +103,27 @@ const BAD_RECIPIENT_ADDRESSES: string[] = [
  * @param trade to check for the given address
  * @param checksummedAddress address to check in the pairs and tokens
  */
-function involvesAddress(trade: Trade, checksummedAddress: string): boolean {
+// TODO add liquidity token to pair
+function involvesAddress(trade: W3Trade, checksummedAddress: string): boolean {
+  const getAddress = (pair: W3Pair) => {
+    return Pair.getAddress(reverseMapToken(pair.tokenAmount0.token)!, reverseMapToken(pair.tokenAmount1.token)!)
+  }
   return (
     trade.route.path.some(token => token.address === checksummedAddress) ||
-    trade.route.pairs.some(pair => pair.liquidityToken.address === checksummedAddress)
+    trade.route.pairs.some(pair => getAddress(pair) === checksummedAddress)
   )
 }
 
 // from the current swap inputs, compute the best trade and return it.
 export function useDerivedSwapInfo(): {
-  currencies: { [field in Field]?: Currency }
-  currencyBalances: { [field in Field]?: CurrencyAmount }
-  parsedAmount: CurrencyAmount | undefined
-  v2Trade: Trade | undefined
+  currencies: { [field in Field]?: W3Token }
+  currencyBalances: { [field in Field]?: W3TokenAmount }
+  parsedAmount: W3TokenAmount | undefined
+  v2Trade: W3Trade | undefined
   inputError?: string
-  v1Trade: Trade | undefined
+  v1Trade: W3Trade | undefined
 } {
+  console.log('starting useDervivedSwapInfo')
   const { account } = useActiveWeb3React()
 
   const toggledVersion = useToggledVersion()
@@ -126,37 +135,63 @@ export function useDerivedSwapInfo(): {
     [Field.OUTPUT]: { currencyId: outputCurrencyId },
     recipient
   } = useSwapState()
-
-  const inputCurrency = useCurrency(inputCurrencyId)
-  const outputCurrency = useCurrency(outputCurrencyId)
+  console.log(
+    'swapState: ' +
+      independentField +
+      ' ' +
+      typedValue +
+      ' ' +
+      inputCurrencyId +
+      ' ' +
+      outputCurrencyId +
+      ' ' +
+      recipient
+  )
+  // TODO
+  const inputCurrency: W3Token | undefined | null = useCurrency(inputCurrencyId)
+  const outputCurrency: W3Token | undefined | null = useCurrency(outputCurrencyId)
   const recipientLookup = useENS(recipient ?? undefined)
   const to: string | null = (recipient === null ? account : recipientLookup.address) ?? null
-
+  console.log('input currency: ' + JSON.stringify(inputCurrency?.currency))
+  // TODO
   const relevantTokenBalances = useCurrencyBalances(account ?? undefined, [
-    inputCurrency ?? undefined,
-    outputCurrency ?? undefined
-  ])
+    inputCurrency ? reverseMapToken(inputCurrency) : undefined,
+    outputCurrency ? reverseMapToken(outputCurrency) : undefined
+  ]).map(mapTokenAmount)
 
+  console.log('amount to parse: ' + typedValue + ' ' + inputCurrency?.address)
   const isExactIn: boolean = independentField === Field.INPUT
   const parsedAmount = tryParseAmount(typedValue, (isExactIn ? inputCurrency : outputCurrency) ?? undefined)
 
+  console.log(
+    'pre best trade funcs: ' + parsedAmount?.amount + ' ' + inputCurrency?.address + ' ' + outputCurrency?.address
+  )
   const bestTradeExactIn = useTradeExactIn(isExactIn ? parsedAmount : undefined, outputCurrency ?? undefined)
   const bestTradeExactOut = useTradeExactOut(inputCurrency ?? undefined, !isExactIn ? parsedAmount : undefined)
 
   const v2Trade = isExactIn ? bestTradeExactIn : bestTradeExactOut
+  console.log('post best trade funcs: ' + v2Trade)
 
   const currencyBalances = {
     [Field.INPUT]: relevantTokenBalances[0],
     [Field.OUTPUT]: relevantTokenBalances[1]
   }
 
-  const currencies: { [field in Field]?: Currency } = {
+  const currencies: { [field in Field]?: W3Token } = {
     [Field.INPUT]: inputCurrency ?? undefined,
     [Field.OUTPUT]: outputCurrency ?? undefined
   }
 
+  // TODO
   // get link to trade on v1, if a better rate exists
-  const v1Trade = useV1Trade(isExactIn, currencies[Field.INPUT], currencies[Field.OUTPUT], parsedAmount)
+  const v1Trade: W3Trade | undefined = mapTrade(
+    useV1Trade(
+      isExactIn,
+      reverseMapToken(currencies[Field.INPUT]),
+      reverseMapToken(currencies[Field.OUTPUT]),
+      reverseMapTokenAmount(parsedAmount)
+    )
+  )
 
   let inputError: string | undefined
   if (!account) {
@@ -186,10 +221,11 @@ export function useDerivedSwapInfo(): {
 
   const [allowedSlippage] = useUserSlippageTolerance()
 
-  const slippageAdjustedAmounts = v2Trade && allowedSlippage && computeSlippageAdjustedAmounts(v2Trade, allowedSlippage)
+  const { result: v2slippageAdjustedAmounts } = useAsync(w3ComputeSlippageAdjustedAmounts, [v2Trade, allowedSlippage])
+  const slippageAdjustedAmounts = v2Trade && allowedSlippage && v2slippageAdjustedAmounts
 
-  const slippageAdjustedAmountsV1 =
-    v1Trade && allowedSlippage && computeSlippageAdjustedAmounts(v1Trade, allowedSlippage)
+  const { result: v1slippageAdjustedAmounts } = useAsync(w3ComputeSlippageAdjustedAmounts, [v1Trade, allowedSlippage])
+  const slippageAdjustedAmountsV1 = v1Trade && allowedSlippage && v1slippageAdjustedAmounts
 
   // compare input balance to max input based on version
   const [balanceIn, amountIn] = [
@@ -203,19 +239,162 @@ export function useDerivedSwapInfo(): {
       : null
   ]
 
-  if (balanceIn && amountIn && balanceIn.lessThan(amountIn)) {
-    inputError = 'Insufficient ' + amountIn.currency.symbol + ' balance'
+  if (balanceIn && amountIn && new Decimal(balanceIn.amount).lessThan(new Decimal(amountIn.amount))) {
+    inputError = 'Insufficient ' + amountIn.token.currency.symbol + ' balance'
   }
 
   return {
     currencies,
     currencyBalances,
     parsedAmount,
-    v2Trade: v2Trade ?? undefined,
+    v2Trade: v2Trade,
     inputError,
     v1Trade
   }
 }
+
+// from the current swap inputs, compute the best trade and return it.
+// formerly part of useDerivedSwapInfo()
+// export function useBestTrade(): {
+//   currencies: { [field in Field]?: W3Token }
+//   currencyBalances: { [field in Field]?: W3TokenAmount }
+//   parsedAmount: W3TokenAmount | undefined
+//   v2TradeAsync: Promise<W3Trade | null>
+//   v1Trade: W3Trade | undefined
+// } {
+//   const { account } = useActiveWeb3React()
+//
+//   const {
+//     independentField,
+//     typedValue,
+//     [Field.INPUT]: { currencyId: inputCurrencyId },
+//     [Field.OUTPUT]: { currencyId: outputCurrencyId }
+//   } = useSwapState()
+//
+//   // TODO
+//   const inputCurrency: W3Token | undefined | null = useCurrency(inputCurrencyId)
+//   const outputCurrency: W3Token | undefined | null = useCurrency(outputCurrencyId)
+//
+//   // TODO
+//   const relevantTokenBalances = useCurrencyBalances(account ?? undefined, [
+//     inputCurrency ? reverseMapToken(inputCurrency) : undefined,
+//     outputCurrency ? reverseMapToken(outputCurrency) : undefined
+//   ]).map(mapTokenAmount)
+//
+//   const isExactIn: boolean = independentField === Field.INPUT
+//   const parsedAmount = tryParseAmount(typedValue, (isExactIn ? inputCurrency : outputCurrency) ?? undefined)
+//
+//   const bestTradeExactIn = useTradeExactIn(isExactIn ? parsedAmount : undefined, outputCurrency ?? undefined)
+//   const bestTradeExactOut = useTradeExactOut(inputCurrency ?? undefined, !isExactIn ? parsedAmount : undefined)
+//
+//   const v2Trade = isExactIn ? bestTradeExactIn : bestTradeExactOut
+//
+//   const currencyBalances = {
+//     [Field.INPUT]: relevantTokenBalances[0],
+//     [Field.OUTPUT]: relevantTokenBalances[1]
+//   }
+//
+//   const currencies: { [field in Field]?: W3Token } = {
+//     [Field.INPUT]: inputCurrency ?? undefined,
+//     [Field.OUTPUT]: outputCurrency ?? undefined
+//   }
+//
+//   // TODO
+//   // get link to trade on v1, if a better rate exists
+//   const v1Trade: W3Trade | undefined = mapTrade(
+//     useV1Trade(
+//       isExactIn,
+//       reverseMapToken(currencies[Field.INPUT]),
+//       reverseMapToken(currencies[Field.OUTPUT]),
+//       reverseMapTokenAmount(parsedAmount)
+//     )
+//   )
+//
+//   return {
+//     currencies,
+//     currencyBalances,
+//     parsedAmount,
+//     v2TradeAsync: v2Trade,
+//     v1Trade
+//   }
+// }
+
+// from the current swap inputs, compute the best trade and return it.
+// formerly part of useDerivedSwapInfo()
+// export function useValidateSwapInput(
+//   currencies: { [field in Field]?: W3Token },
+//   currencyBalances: { [field in Field]?: W3TokenAmount },
+//   parsedAmount: W3TokenAmount | undefined,
+//   v2Trade: W3Trade | undefined
+// ): string | undefined {
+//   const { account } = useActiveWeb3React()
+//
+//   const { recipient } = useSwapState()
+//
+//   const recipientLookup = useENS(recipient ?? undefined)
+//   const to: string | null = (recipient === null ? account : recipientLookup.address) ?? null
+//
+//   let inputError: string | undefined
+//   if (!account) {
+//     inputError = 'Connect Wallet'
+//   }
+//
+//   if (!parsedAmount) {
+//     inputError = inputError ?? 'Enter an amount'
+//   }
+//
+//   if (!currencies[Field.INPUT] || !currencies[Field.OUTPUT]) {
+//     inputError = inputError ?? 'Select a token'
+//   }
+//
+//   const formattedTo = isAddress(to)
+//   if (!to || !formattedTo) {
+//     inputError = inputError ?? 'Enter a recipient'
+//   } else {
+//     if (BAD_RECIPIENT_ADDRESSES.indexOf(formattedTo) !== -1 || (v2Trade && involvesAddress(v2Trade, formattedTo))) {
+//       inputError = inputError ?? 'Invalid recipient'
+//     }
+//   }
+//
+//   return inputError
+// }
+
+// from the current swap inputs, compute the best trade and return it.
+// formerly part of useDerivedSwapInfo()
+
+// export async function validateSwapBalance(
+//   currencyBalances: { [field in Field]?: W3TokenAmount },
+//   v2Trade: W3Trade | undefined,
+//   v1Trade: W3Trade | undefined,
+//   allowedSlippage: number,
+//   toggledVersion: Version
+// ): Promise<{ inputError?: string }> {
+//   let inputError: string | undefined
+//
+//   const slippageAdjustedAmounts =
+//     v2Trade && allowedSlippage && (await w3ComputeSlippageAdjustedAmounts(v2Trade, allowedSlippage))
+//
+//   const slippageAdjustedAmountsV1 =
+//     v1Trade && allowedSlippage && (await w3ComputeSlippageAdjustedAmounts(v1Trade, allowedSlippage))
+//
+//   // compare input balance to max input based on version
+//   const [balanceIn, amountIn] = [
+//     currencyBalances[Field.INPUT],
+//     toggledVersion === Version.v1
+//       ? slippageAdjustedAmountsV1
+//         ? slippageAdjustedAmountsV1[Field.INPUT]
+//         : null
+//       : slippageAdjustedAmounts
+//       ? slippageAdjustedAmounts[Field.INPUT]
+//       : null
+//   ]
+//
+//   if (balanceIn && amountIn && new Decimal(balanceIn.amount).lessThan(new Decimal(amountIn.amount))) {
+//     inputError = 'Insufficient ' + amountIn.token.currency.symbol + ' balance'
+//   }
+//
+//   return { inputError }
+// }
 
 function parseCurrencyFromURLParameter(urlParam: any): string {
   if (typeof urlParam === 'string') {

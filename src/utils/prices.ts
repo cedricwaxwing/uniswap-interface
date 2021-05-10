@@ -2,7 +2,9 @@ import { BLOCKED_PRICE_IMPACT_NON_EXPERT } from '../constants'
 import { CurrencyAmount, Fraction, JSBI, Percent, TokenAmount, Trade } from '@uniswap/sdk'
 import { ALLOWED_PRICE_IMPACT_HIGH, ALLOWED_PRICE_IMPACT_LOW, ALLOWED_PRICE_IMPACT_MEDIUM } from '../constants'
 import { Field } from '../state/swap/actions'
-import { basisPointsToPercent } from './index'
+import { basisPointsToPercent, w3BasisPointsToPercent } from './index'
+import { W3TokenAmount, W3Trade } from '../web3api/types'
+import { w3TradeMaximumAmountIn, w3TradeMinimumAmountOut } from '../web3api/tradeWrappers'
 
 const BASE_FEE = new Percent(JSBI.BigInt(30), JSBI.BigInt(10000))
 const ONE_HUNDRED_PERCENT = new Percent(JSBI.BigInt(10000), JSBI.BigInt(10000))
@@ -51,6 +53,17 @@ export function computeSlippageAdjustedAmounts(
   return {
     [Field.INPUT]: trade?.maximumAmountIn(pct),
     [Field.OUTPUT]: trade?.minimumAmountOut(pct)
+  }
+}
+
+export async function w3ComputeSlippageAdjustedAmounts(
+  trade: W3Trade | undefined,
+  allowedSlippage: number
+): Promise<{ [field in Field]?: W3TokenAmount }> {
+  const pct = w3BasisPointsToPercent(allowedSlippage)
+  return {
+    [Field.INPUT]: trade ? await w3TradeMaximumAmountIn(trade, pct.toFixed(18)) : undefined,
+    [Field.OUTPUT]: trade ? await w3TradeMinimumAmountOut(trade, pct.toFixed(18)) : undefined
   }
 }
 

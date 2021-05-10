@@ -2,7 +2,6 @@ import { isTradeBetter } from 'utils/trades'
 import { Currency, CurrencyAmount, Pair, Token, Trade } from '@uniswap/sdk'
 import flatMap from 'lodash.flatmap'
 import { useMemo } from 'react'
-// import { useWeb3ApiQuery } from '@web3api/react'
 
 import {
   BASES_TO_CHECK_TRADES_AGAINST,
@@ -12,7 +11,6 @@ import {
 } from '../constants'
 import { PairState, usePairs } from '../data/Reserves'
 import { wrappedCurrency } from '../utils/wrappedCurrency'
-// import { mapPairs } from '../web3api/mapping'
 
 import { useActiveWeb3React } from './index'
 import { useUnsupportedTokens } from './Tokens'
@@ -99,21 +97,6 @@ const MAX_HOPS = 3
  */
 export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?: Currency): Trade | null {
   const allowedPairs = useAllCommonPairs(currencyAmountIn?.currency, currencyOut)
-  //  const allowedPairs = mapPairs(useAllCommonPairs(currencyAmountIn?.currency, currencyOut))
-  console.log('allowedPairs', allowedPairs)
-
-  // const { execute: bestTradeExactIn } = useWeb3ApiQuery({
-  //   uri: 'ipfs/QmRQuz7KDtRAYXyZo7GMXedJkrAT2uUTE1isJCEZ5Wz9T3/',
-  //   query: `query {
-  //     bestTradeExactIn(
-  //       pairs: $pairs,
-
-  //      )
-  //    }`,
-  //   variables: {
-  //     pairs: allowedPairs
-  //   }
-  // })
 
   const [singleHopOnly] = useUserSingleHopOnly()
 

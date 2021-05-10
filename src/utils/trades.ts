@@ -1,6 +1,10 @@
-import { ZERO_PERCENT, ONE_HUNDRED_PERCENT } from './../constants/index'
+import { W3_ZERO_PERCENT, W3_ONE_HUNDRED_PERCENT, ZERO_PERCENT, ONE_HUNDRED_PERCENT } from './../constants/index'
 import { Trade, Percent, currencyEquals } from '@uniswap/sdk'
+import { W3Trade } from '../web3api/types'
+import Decimal from 'decimal.js-light'
+import { w3TradeExecutionPrice } from '../web3api/tradeWrappers'
 
+// TODO: remove
 // returns whether tradeB is better than tradeA by at least a threshold percentage amount
 export function isTradeBetter(
   tradeA: Trade | undefined | null,
@@ -23,5 +27,32 @@ export function isTradeBetter(
     return tradeA.executionPrice.lessThan(tradeB.executionPrice)
   } else {
     return tradeA.executionPrice.raw.multiply(minimumDelta.add(ONE_HUNDRED_PERCENT)).lessThan(tradeB.executionPrice)
+  }
+}
+
+export async function w3IsTradeBetter(
+  tradeA: W3Trade | undefined | null,
+  tradeB: W3Trade | undefined | null,
+  minimumDelta: Decimal = W3_ZERO_PERCENT
+): Promise<boolean | undefined> {
+  if (tradeA && !tradeB) return false
+  if (tradeB && !tradeA) return true
+  if (!tradeA || !tradeB) return undefined
+
+  if (
+    tradeA.tradeType !== tradeB.tradeType ||
+    !currencyEquals(tradeA.inputAmount.token.currency, tradeB.inputAmount.token.currency) ||
+    !currencyEquals(tradeB.outputAmount.token.currency, tradeB.outputAmount.token.currency)
+  ) {
+    throw new Error('Trades are not comparable')
+  }
+
+  const executionPriceA: Decimal = await w3TradeExecutionPrice(tradeA)
+  const executionPriceB: Decimal = await w3TradeExecutionPrice(tradeB)
+
+  if (minimumDelta.equals(W3_ZERO_PERCENT)) {
+    return executionPriceA.lessThan(executionPriceB)
+  } else {
+    return executionPriceA.mul(minimumDelta.add(W3_ONE_HUNDRED_PERCENT)).lessThan(executionPriceB)
   }
 }
