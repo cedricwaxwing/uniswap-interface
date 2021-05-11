@@ -199,7 +199,7 @@ export function useCurrency(currencyId: string | undefined): W3Token | null | un
   const { chainId } = useActiveWeb3React()
   return isETH
     ? {
-        chainId: mapChainId(chainId!),
+        chainId: chainId ? mapChainId(chainId) : undefined,
         address: '',
         currency: ETHER
       }

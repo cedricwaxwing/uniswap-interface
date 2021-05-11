@@ -7,11 +7,11 @@ import {
   Token as UniToken,
   TokenAmount as UniTokenAmount,
   Trade as UniTrade,
-  TradeType as UniTradeType,
-  WETH as UniWETH
+  TradeType as UniTradeType
 } from '@uniswap/sdk'
 import { W3ChainId, W3Currency, W3Pair, W3Route, W3Token, W3TokenAmount, W3Trade, W3TradeType } from './types'
-import { isEther } from './utils'
+import { currencyEquals, isEther } from './utils'
+import { ETHER } from './constants'
 
 export function mapChainId(input: UniChainId): W3ChainId {
   switch (input) {
@@ -38,40 +38,29 @@ export function mapCurrency(input: UniCurrency): W3Currency {
   }
 }
 
-export function mapToken(input: UniToken | UniCurrency): W3Token {
+export function mapToken(input: UniToken | UniCurrency, backupChainId?: UniChainId): W3Token {
+  const currency = mapCurrency(input)
   if (input instanceof UniToken) {
     return {
       chainId: mapChainId(input.chainId),
-      address: input.address,
-      currency: mapCurrency(input)
-    }
-  }
-  try {
-    const token: UniToken = input as UniToken
-    return {
-      chainId: mapChainId(token.chainId),
-      address: token.address,
-      currency: mapCurrency(input)
-    }
-  } catch {
-    return {
-      chainId: undefined,
-      address: '',
-      currency: mapCurrency(input)
-    }
-  }
-}
-
-export function mapTokenAmount(input?: UniTokenAmount | UniCurrencyAmount): W3TokenAmount | undefined {
-  if (!input) return undefined
-  if (input instanceof UniTokenAmount) {
-    return {
-      token: mapToken(input.token),
-      amount: input.numerator.toString()
+      address: currencyEquals(currency, ETHER) ? '' : input.address,
+      currency: currency
     }
   }
   return {
-    token: mapToken(input.currency),
+    chainId: backupChainId ? mapChainId(backupChainId) : undefined,
+    address: '',
+    currency: currency
+  }
+}
+
+export function mapTokenAmount(
+  input?: UniTokenAmount | UniCurrencyAmount,
+  backupChainId?: UniChainId
+): W3TokenAmount | undefined {
+  if (!input) return undefined
+  return {
+    token: mapToken(input instanceof UniTokenAmount ? input.token : input.currency, backupChainId),
     amount: input.numerator.toString()
   }
 }
@@ -130,10 +119,16 @@ export function reverseMapChainId(input: W3ChainId | number): UniChainId {
   }
 }
 
-export function reverseMapToken(input?: W3Token): UniToken | undefined {
+export function reverseMapToken(input?: W3Token, backupChainId?: W3ChainId): UniToken | undefined {
   if (!input) return undefined
   if (isEther(input)) {
-    return UniWETH[reverseMapChainId(input.chainId!)]
+    return new UniToken(
+      input.chainId !== undefined ? reverseMapChainId(input.chainId) : reverseMapChainId(backupChainId!),
+      '0xc778417E063141139Fce010982780140Aa0cD5Ab', // this is the testnet weth address
+      input.currency.decimals,
+      input.currency.symbol,
+      input.currency.name
+    )
   }
   return new UniToken(
     reverseMapChainId(input.chainId!),
@@ -144,9 +139,9 @@ export function reverseMapToken(input?: W3Token): UniToken | undefined {
   )
 }
 
-export function reverseMapTokenAmount(input?: W3TokenAmount): UniTokenAmount | undefined {
+export function reverseMapTokenAmount(input?: W3TokenAmount, backupChainId?: W3ChainId): UniTokenAmount | undefined {
   if (!input) return undefined
-  return new UniTokenAmount(reverseMapToken(input.token)!, input.amount)
+  return new UniTokenAmount(reverseMapToken(input.token, backupChainId)!, input.amount)
 }
 
 export function reverseMapPair(input: W3Pair): UniPair {

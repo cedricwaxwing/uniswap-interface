@@ -1,4 +1,4 @@
-import { CurrencyAmount, JSBI, Token, Trade } from '@uniswap/sdk'
+import { CurrencyAmount, ETHER, JSBI, Token, Trade } from '@uniswap/sdk'
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { ArrowDown } from 'react-feather'
 import ReactGA from 'react-ga'
@@ -53,6 +53,8 @@ import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter
 import { isTradeBetter } from 'utils/trades'
 import { RouteComponentProps } from 'react-router-dom'
 import { W3Trade } from '../../web3api/types'
+import { mapChainId, reverseMapToken, reverseMapTokenAmount } from '../../web3api/mapping'
+import { isEther } from '../../web3api/utils'
 
 export default function Swap({ history }: RouteComponentProps) {
   const loadedUrlParams = useDefaultsFromURLSearch()
@@ -79,7 +81,7 @@ export default function Swap({ history }: RouteComponentProps) {
       return !Boolean(token.address in defaultTokens)
     })
 
-  const { account } = useActiveWeb3React()
+  const { account, chainId } = useActiveWeb3React()
   const theme = useContext(ThemeContext)
 
   // toggle wallet when disconnected
@@ -145,52 +147,55 @@ export default function Swap({ history }: RouteComponentProps) {
   } = useDerivedSwapInfoOld()
 
   // convert types
-  // const currencies = {
-  //   [Field.INPUT]: reverseMapToken(w3currencies.INPUT),
-  //   [Field.OUTPUT]: reverseMapToken(w3currencies.OUTPUT)
-  // }
-  // const currencyBalances = {
-  //   [Field.INPUT]: reverseMapTokenAmount(w3currencyBalances.INPUT),
-  //   [Field.OUTPUT]: reverseMapTokenAmount(w3currencyBalances.OUTPUT)
-  // }
-  // const parsedAmount: CurrencyAmount | undefined = reverseMapTokenAmount(w3parsedAmount)
-  // const v2Trade: Trade | undefined = w3v2Trade ? reverseMapTrade(w3v2Trade) : undefined
-  // const v1Trade: Trade | undefined = w3v1Trade ? reverseMapTrade(w3v1Trade) : undefined
+  const currenciesx = {
+    [Field.INPUT]: isEther(w3currencies.INPUT) ? ETHER : reverseMapToken(w3currencies.INPUT),
+    [Field.OUTPUT]: isEther(w3currencies.OUTPUT) ? ETHER : reverseMapToken(w3currencies.OUTPUT)
+  }
+  const currencyBalancesx = {
+    [Field.INPUT]: reverseMapTokenAmount(
+      w3currencyBalances.INPUT,
+      chainId ? mapChainId(chainId) : undefined
+    ) as CurrencyAmount,
+    [Field.OUTPUT]: reverseMapTokenAmount(
+      w3currencyBalances.OUTPUT,
+      chainId ? mapChainId(chainId) : undefined
+    ) as CurrencyAmount
+  }
+  const parsedAmountx: CurrencyAmount | undefined = reverseMapTokenAmount(
+    w3parsedAmount,
+    chainId ? mapChainId(chainId) : undefined
+  ) as CurrencyAmount
+  // const v2Tradex: Trade | undefined = w3v2Trade ? reverseMapTrade(w3v2Trade) : undefined
+  // const v1Tradex: Trade | undefined = w3v1Trade ? reverseMapTrade(w3v1Trade) : undefined
 
-  // console.log(
-  //   'final values old: ' +
-  //     '\n currencies: ' +
-  //     JSON.stringify(currencies) +
-  //     '\n currencyBalances: ' +
-  //     JSON.stringify(currencyBalances) +
-  //     '\n v2Trade: ' +
-  //     JSON.stringify(v2Trade) +
-  //     '\n v1Trade: ' +
-  //     JSON.stringify(v1Trade) +
-  //     '\n parsedAmont: ' +
-  //     parsedAmount +
-  //     '\n inputError: ' +
-  //     swapInputError
-  // )
+  console.log(
+    'final values old: ' +
+      '\n currencies: ' +
+      JSON.stringify(currencies) +
+      '\n currencyBalances: ' +
+      JSON.stringify(currencyBalances) +
+      // '\n v2Trade: ' +
+      // JSON.stringify(v2Trade) +
+      // '\n v1Trade: ' +
+      // JSON.stringify(v1Trade) +
+      '\n parsedAmont: ' +
+      parsedAmount +
+      '\n inputError: ' +
+      swapInputError
+  )
 
   console.log(
     'final values new: ' +
-      '\n timestamp: ' +
-      new Date().getHours() +
-      ':' +
-      new Date().getMinutes() +
-      ':' +
-      new Date().getSeconds() +
       '\n currencies: ' +
-      JSON.stringify(w3currencies) +
+      JSON.stringify(currenciesx) +
       '\n currencyBalances: ' +
-      JSON.stringify(w3currencyBalances) +
-      '\n v2Trade: ' +
-      JSON.stringify(w3v2Trade) +
-      '\n v1Trade: ' +
-      JSON.stringify(w3v1Trade) +
+      JSON.stringify(currencyBalancesx) +
+      // '\n v2Trade: ' +
+      // JSON.stringify(v2Tradex) +
+      // '\n v1Trade: ' +
+      // JSON.stringify(v1Tradex) +
       '\n parsedAmont: ' +
-      w3parsedAmount +
+      parsedAmountx +
       '\n inputError: ' +
       w3swapInputError
   )

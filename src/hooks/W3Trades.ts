@@ -176,25 +176,6 @@ export function useTradeExactIn(currencyAmountIn?: W3TokenAmount, currencyOut?: 
   ])
 }
 
-// export function useTradeExactIn(currencyAmountIn?: W3TokenAmount, currencyOut?: W3Token): W3Trade | undefined {
-//   const allowedPairs = useAllCommonPairs(currencyAmountIn?.token, currencyOut)
-//   const [singleHopOnly] = useUserSingleHopOnly()
-//
-//   const bestTradePromise = useMemo(() => bestExactIn(allowedPairs, singleHopOnly, currencyAmountIn, currencyOut), [
-//     allowedPairs,
-//     singleHopOnly,
-//     currencyAmountIn,
-//     currencyOut
-//   ])
-//   const asyncQuery = useAsync(async () => await bestTradePromise, [], {
-//     setLoading: state => ({ ...state, loading: true })
-//   })
-//   if (asyncQuery.error) {
-//     throw asyncQuery.error
-//   }
-//   return asyncQuery.result ?? undefined
-// }
-
 /**
  * Returns the best trade for the token in to the exact amount of token out
  */
@@ -209,25 +190,6 @@ export function useTradeExactOut(currencyIn?: W3Token, currencyAmountOut?: W3Tok
     currencyAmountOut
   ])
 }
-// export function useTradeExactOut(currencyIn?: W3Token, currencyAmountOut?: W3TokenAmount): W3Trade | undefined {
-//   const allowedPairs = useAllCommonPairs(currencyIn, currencyAmountOut?.token)
-//   const [singleHopOnly] = useUserSingleHopOnly()
-//
-//   const bestTradePromise = useMemo(() => bestExactOut(allowedPairs, singleHopOnly, currencyIn, currencyAmountOut), [
-//     allowedPairs,
-//     singleHopOnly,
-//     currencyIn,
-//     currencyAmountOut
-//   ])
-//
-//   const { result, error } = useAsync(async () => await bestTradePromise, [], {
-//     setLoading: state => ({ ...state, loading: true })
-//   })
-//   if (error) {
-//     throw error
-//   }
-//   return result ?? undefined
-// }
 
 export function useIsTransactionUnsupported(currencyIn?: W3Token, currencyOut?: W3Token): boolean {
   const unsupportedTokens: { [address: string]: W3Token } = useUnsupportedTokens()
