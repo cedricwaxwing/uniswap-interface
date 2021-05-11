@@ -36,8 +36,11 @@ import {
   useDefaultsFromURLSearch,
   useSwapActionHandlers,
   useSwapState,
-  useDerivedSwapInfo
+  useBestTrade,
+  validateSwapBalance,
+  useValidateSwapInput
 } from '../../state/swap/hooks'
+import { useDerivedSwapInfo as useDerivedSwapInfoOld } from '../../state/swap/oldHooks'
 import { useExpertModeManager, useUserSlippageTolerance, useUserSingleHopOnly } from '../../state/user/hooks'
 import { LinkStyledButton, TYPE } from '../../theme'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
@@ -49,7 +52,7 @@ import { useIsTransactionUnsupported } from 'hooks/Trades'
 import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter'
 import { isTradeBetter } from 'utils/trades'
 import { RouteComponentProps } from 'react-router-dom'
-import { reverseMapToken, reverseMapTokenAmount, reverseMapTrade } from '../../web3api/mapping'
+import { W3Trade } from '../../web3api/types'
 
 export default function Swap({ history }: RouteComponentProps) {
   const loadedUrlParams = useDefaultsFromURLSearch()
@@ -88,78 +91,109 @@ export default function Swap({ history }: RouteComponentProps) {
 
   // get custom setting values for user
   const [allowedSlippage] = useUserSlippageTolerance()
+  const toggledVersion = useToggledVersion()
 
   // swap state
   const { independentField, typedValue, recipient } = useSwapState()
 
   // derivedSwapInfo state
-  // const [w3v2Trade, setW3V2Trade] = useState<W3Trade | undefined>(undefined)
-  // const [v2Trade, setV2Trade] = useState<Trade | undefined>(undefined)
-  // const [swapInputError, setSwapInputError] = useState<string | undefined>(undefined)
-  //
-  // // get best trade
-  // const {
-  //   currencies: w3currencies,
-  //   currencyBalances: w3currencyBalances,
-  //   parsedAmount: w3parsedAmount,
-  //   v2TradeAsync,
-  //   v1Trade: w3v1Trade
-  // } = useBestTrade()
-  // const { result: v2TradeQuery } = useAsync(
-  //   async (p: Promise<W3Trade | null>) => {
-  //     return await p
-  //   },
-  //   [v2TradeAsync]
-  // )
-  // useEffect(() => {
-  //   if (v2TradeQuery) {
-  //     setW3V2Trade(v2TradeQuery)
-  //     setV2Trade(reverseMapTrade(v2TradeQuery))
-  //   } else if (v2TradeQuery === null) {
-  //     setW3V2Trade(undefined)
-  //     setV2Trade(undefined)
-  //   }
-  // }, [v2TradeQuery])
-  //
-  // // validate swap inputs
-  // const inputError = useValidateSwapInput(w3currencies, w3currencyBalances, w3parsedAmount, w3v2Trade)
-  // const { result: balanceError } = useAsync(validateSwapBalance, [
-  //   w3currencyBalances,
-  //   w3v2Trade,
-  //   w3v1Trade,
-  //   allowedSlippage,
-  //   toggledVersion
-  // ])
-  // useEffect(() => {
-  //   if (balanceError) {
-  //     setSwapInputError(balanceError.inputError ?? inputError)
-  //   }
-  // }, [inputError, balanceError])
+  const [w3v2Trade, setW3V2Trade] = useState<W3Trade | undefined>(undefined)
+  const [w3swapInputError, setW3SwapInputError] = useState<string | undefined>(undefined)
 
+  // get best trade
   const {
     currencies: w3currencies,
     currencyBalances: w3currencyBalances,
     parsedAmount: w3parsedAmount,
-    v2Trade: w3v2Trade,
-    inputError: swapInputError,
+    v2TradeAsync,
     v1Trade: w3v1Trade
-  } = useDerivedSwapInfo()
+  } = useBestTrade()
 
-  console.log('final v2Trade: ' + w3v2Trade)
-  console.log('inputError: ' + swapInputError)
+  useEffect(() => {
+    v2TradeAsync.then(v2TradeQuery => {
+      if (v2TradeQuery) {
+        setW3V2Trade(v2TradeQuery)
+      } else {
+        setW3V2Trade(undefined)
+      }
+    })
+  }, [w3currencies, w3currencyBalances, w3parsedAmount, v2TradeAsync, w3v1Trade])
+
+  // validate swap inputs
+  const inputError = useValidateSwapInput(w3currencies, w3currencyBalances, w3parsedAmount, w3v2Trade)
+  useEffect(() => {
+    validateSwapBalance(w3currencyBalances, w3v2Trade, w3v1Trade, allowedSlippage, toggledVersion).then(
+      balanceError => {
+        if (balanceError) {
+          setW3SwapInputError(balanceError)
+        } else if (inputError) {
+          setW3SwapInputError(inputError)
+        } else {
+          setW3SwapInputError(undefined)
+        }
+      }
+    )
+  }, [inputError, w3currencyBalances, w3v2Trade, w3v1Trade, allowedSlippage, toggledVersion])
+
+  const {
+    currencies,
+    currencyBalances,
+    parsedAmount,
+    v2Trade,
+    inputError: swapInputError,
+    v1Trade
+  } = useDerivedSwapInfoOld()
 
   // convert types
-  const currencies = {
-    [Field.INPUT]: reverseMapToken(w3currencies.INPUT),
-    [Field.OUTPUT]: reverseMapToken(w3currencies.OUTPUT)
-  }
-  const currencyBalances = {
-    [Field.INPUT]: reverseMapTokenAmount(w3currencyBalances.INPUT),
-    [Field.OUTPUT]: reverseMapTokenAmount(w3currencyBalances.OUTPUT)
-  }
-  const parsedAmount: CurrencyAmount | undefined = reverseMapTokenAmount(w3parsedAmount)
-  const v2Trade: Trade | undefined = w3v2Trade ? reverseMapTrade(w3v2Trade) : undefined
-  const v1Trade: Trade | undefined = w3v1Trade ? reverseMapTrade(w3v1Trade) : undefined
+  // const currencies = {
+  //   [Field.INPUT]: reverseMapToken(w3currencies.INPUT),
+  //   [Field.OUTPUT]: reverseMapToken(w3currencies.OUTPUT)
+  // }
+  // const currencyBalances = {
+  //   [Field.INPUT]: reverseMapTokenAmount(w3currencyBalances.INPUT),
+  //   [Field.OUTPUT]: reverseMapTokenAmount(w3currencyBalances.OUTPUT)
+  // }
+  // const parsedAmount: CurrencyAmount | undefined = reverseMapTokenAmount(w3parsedAmount)
+  // const v2Trade: Trade | undefined = w3v2Trade ? reverseMapTrade(w3v2Trade) : undefined
+  // const v1Trade: Trade | undefined = w3v1Trade ? reverseMapTrade(w3v1Trade) : undefined
+
+  // console.log(
+  //   'final values old: ' +
+  //     '\n currencies: ' +
+  //     JSON.stringify(currencies) +
+  //     '\n currencyBalances: ' +
+  //     JSON.stringify(currencyBalances) +
+  //     '\n v2Trade: ' +
+  //     JSON.stringify(v2Trade) +
+  //     '\n v1Trade: ' +
+  //     JSON.stringify(v1Trade) +
+  //     '\n parsedAmont: ' +
+  //     parsedAmount +
+  //     '\n inputError: ' +
+  //     swapInputError
+  // )
+
+  console.log(
+    'final values new: ' +
+      '\n timestamp: ' +
+      new Date().getHours() +
+      ':' +
+      new Date().getMinutes() +
+      ':' +
+      new Date().getSeconds() +
+      '\n currencies: ' +
+      JSON.stringify(w3currencies) +
+      '\n currencyBalances: ' +
+      JSON.stringify(w3currencyBalances) +
+      '\n v2Trade: ' +
+      JSON.stringify(w3v2Trade) +
+      '\n v1Trade: ' +
+      JSON.stringify(w3v1Trade) +
+      '\n parsedAmont: ' +
+      w3parsedAmount +
+      '\n inputError: ' +
+      w3swapInputError
+  )
 
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
     currencies[Field.INPUT],
@@ -168,7 +202,7 @@ export default function Swap({ history }: RouteComponentProps) {
   )
   const showWrap: boolean = wrapType !== WrapType.NOT_APPLICABLE
   const { address: recipientAddress } = useENSAddress(recipient)
-  const toggledVersion = useToggledVersion()
+
   const tradesByVersion = {
     [Version.v1]: v1Trade,
     [Version.v2]: v2Trade

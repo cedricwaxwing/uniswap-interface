@@ -8,6 +8,9 @@ export class Web3ApiClientManager {
   private static _provider: EthereumProvider
 
   static get client() {
+    if (!this._client) {
+      this._client = new Web3ApiClient()
+    }
     return this._client
   }
 

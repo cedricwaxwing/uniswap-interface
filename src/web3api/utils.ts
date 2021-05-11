@@ -31,7 +31,7 @@ export function WETH(chainId: W3ChainId): W3Token {
         address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
         currency: {
           decimals: 18,
-          symbol: 'WETH9',
+          symbol: 'WETH',
           name: 'Wrapped Ether'
         }
       }
@@ -41,7 +41,7 @@ export function WETH(chainId: W3ChainId): W3Token {
         address: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
         currency: {
           decimals: 18,
-          symbol: 'WETH9',
+          symbol: 'WETH',
           name: 'Wrapped Ether'
         }
       }
@@ -51,7 +51,7 @@ export function WETH(chainId: W3ChainId): W3Token {
         address: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
         currency: {
           decimals: 18,
-          symbol: 'WETH9',
+          symbol: 'WETH',
           name: 'Wrapped Ether'
         }
       }
@@ -61,7 +61,7 @@ export function WETH(chainId: W3ChainId): W3Token {
         address: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
         currency: {
           decimals: 18,
-          symbol: 'WETH9',
+          symbol: 'WETH',
           name: 'Wrapped Ether'
         }
       }
@@ -71,7 +71,7 @@ export function WETH(chainId: W3ChainId): W3Token {
         address: '0xd0A1E359811322d97991E03f863a0C30C2cF029C',
         currency: {
           decimals: 18,
-          symbol: 'WETH9',
+          symbol: 'WETH',
           name: 'Wrapped Ether'
         }
       }

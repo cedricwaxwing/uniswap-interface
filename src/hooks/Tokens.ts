@@ -11,7 +11,6 @@ import { useActiveWeb3React } from './index'
 import { useBytes32TokenContract, useTokenContract } from './useContract'
 import { filterTokens } from '../components/SearchModal/filtering'
 import { arrayify } from 'ethers/lib/utils'
-import { mapToken, reverseMapToken } from '../web3api/mapping'
 
 // reduce token map into standard address <-> Token mapping, optionally include user added tokens
 function useTokensFromMap(tokenMap: TokenAddressMap, includeUserAdded: boolean): { [address: string]: Token } {
@@ -100,7 +99,8 @@ export function useFoundOnInactiveList(searchQuery: string): Token[] | undefined
     if (!chainId || searchQuery === '') {
       return undefined
     } else {
-      return filterTokens(Object.values(inactiveTokens).map(mapToken), searchQuery).map(v => reverseMapToken(v)!)
+      const tokens = filterTokens(Object.values(inactiveTokens), searchQuery)
+      return tokens
     }
   }, [chainId, inactiveTokens, searchQuery])
 }

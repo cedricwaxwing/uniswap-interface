@@ -10,6 +10,7 @@ import { UriRedirect } from '@web3api/client-js'
 import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 import { Web3ApiProvider } from '@web3api/react'
 import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
+import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
 
 const MessageWrapper = styled.div`
   display: flex;
@@ -30,9 +31,20 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
   // Web3API integration.
   const [redirects, setRedirects] = useState<UriRedirect[]>([
     {
+      from: 'ens/ethereum.web3api.eth',
+      to: ethereumPlugin({
+        networks: {
+          mainnet: {
+            provider: network.provider.url
+          }
+        },
+        defaultNetwork: 'mainnet'
+      })
+    },
+    {
       from: 'w3://ens/ipfs.web3api.eth',
       to: ipfsPlugin({
-        provider: ' https://ipfs.io'
+        provider: 'https://ipfs.io'
       })
     }
   ])
@@ -40,7 +52,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
   // try to eagerly connect to an injected provider, if it exists and has granted access already
   const triedEager = useEagerConnect()
 
-  // after eagerly trying injected, if the network connect ever isn't active or in an error state, activate itd
+  // after eagerly trying injected, if the network connect ever isn't active or in an error state, activate it
   useEffect(() => {
     if (triedEager && !networkActive && !networkError && !active) {
       activateNetwork(network)

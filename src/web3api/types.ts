@@ -5,16 +5,16 @@ export interface Query {
 }
 
 export enum W3ChainId {
-  MAINNET = 'MAINNET',
-  ROPSTEN = 'ROPSTEN',
-  RINKEBY = 'RINKEBY',
-  GÖRLI = 'GOERLI',
-  KOVAN = 'KOVAN'
+  MAINNET = 0,
+  ROPSTEN = 1,
+  RINKEBY = 2,
+  GÖRLI = 3,
+  KOVAN = 4
 }
 
 export enum W3TradeType {
-  EXACT_INPUT = 'EXACT_INPUT',
-  EXACT_OUTPUT = 'EXACT_OUTPUT'
+  EXACT_INPUT = 0,
+  EXACT_OUTPUT = 1
 }
 
 export interface W3Pair {

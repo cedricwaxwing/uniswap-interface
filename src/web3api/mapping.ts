@@ -7,7 +7,8 @@ import {
   Token as UniToken,
   TokenAmount as UniTokenAmount,
   Trade as UniTrade,
-  TradeType as UniTradeType
+  TradeType as UniTradeType,
+  WETH as UniWETH
 } from '@uniswap/sdk'
 import { W3ChainId, W3Currency, W3Pair, W3Route, W3Token, W3TokenAmount, W3Trade, W3TradeType } from './types'
 import { isEther } from './utils'
@@ -37,17 +38,6 @@ export function mapCurrency(input: UniCurrency): W3Currency {
   }
 }
 
-export function mapCurrencyAmount(input: UniCurrencyAmount): W3TokenAmount {
-  return {
-    token: {
-      chainId: undefined,
-      address: '',
-      currency: mapCurrency(input.currency)
-    },
-    amount: input.numerator.toString()
-  }
-}
-
 export function mapToken(input: UniToken | UniCurrency): W3Token {
   if (input instanceof UniToken) {
     return {
@@ -56,10 +46,19 @@ export function mapToken(input: UniToken | UniCurrency): W3Token {
       currency: mapCurrency(input)
     }
   }
-  return {
-    chainId: W3ChainId.MAINNET,
-    address: '',
-    currency: mapCurrency(input)
+  try {
+    const token: UniToken = input as UniToken
+    return {
+      chainId: mapChainId(token.chainId),
+      address: token.address,
+      currency: mapCurrency(input)
+    }
+  } catch {
+    return {
+      chainId: undefined,
+      address: '',
+      currency: mapCurrency(input)
+    }
   }
 }
 
@@ -114,7 +113,7 @@ export function mapTrade(input?: UniTrade): W3Trade | undefined {
   }
 }
 
-export function reverseMapChainId(input: W3ChainId): UniChainId {
+export function reverseMapChainId(input: W3ChainId | number): UniChainId {
   switch (input) {
     case W3ChainId.MAINNET:
       return UniChainId.MAINNET
@@ -133,7 +132,9 @@ export function reverseMapChainId(input: W3ChainId): UniChainId {
 
 export function reverseMapToken(input?: W3Token): UniToken | undefined {
   if (!input) return undefined
-  if (isEther(input)) return undefined
+  if (isEther(input)) {
+    return UniWETH[reverseMapChainId(input.chainId!)]
+  }
   return new UniToken(
     reverseMapChainId(input.chainId!),
     input.address,

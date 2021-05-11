@@ -3,6 +3,7 @@ import { Trade, Percent, currencyEquals } from '@uniswap/sdk'
 import { W3Trade } from '../web3api/types'
 import Decimal from 'decimal.js-light'
 import { w3TradeExecutionPrice } from '../web3api/tradeWrappers'
+import { currencyEquals as w3currencyEquals } from '../web3api/utils'
 
 // TODO: remove
 // returns whether tradeB is better than tradeA by at least a threshold percentage amount
@@ -41,8 +42,8 @@ export async function w3IsTradeBetter(
 
   if (
     tradeA.tradeType !== tradeB.tradeType ||
-    !currencyEquals(tradeA.inputAmount.token.currency, tradeB.inputAmount.token.currency) ||
-    !currencyEquals(tradeB.outputAmount.token.currency, tradeB.outputAmount.token.currency)
+    !w3currencyEquals(tradeA.inputAmount.token.currency, tradeB.inputAmount.token.currency) ||
+    !w3currencyEquals(tradeB.outputAmount.token.currency, tradeB.outputAmount.token.currency)
   ) {
     throw new Error('Trades are not comparable')
   }

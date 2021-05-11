@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { isAddress } from '../../utils'
-import { Token } from '@uniswap/sdk'
+import { W3Token } from '../../web3api/types'
 
-export function filterTokens(tokens: Token[], search: string): Token[] {
+export function filterTokens(tokens: W3Token[], search: string): W3Token[] {
   if (search.length === 0) return tokens
 
   const searchingAddress = isAddress(search)
@@ -30,12 +30,12 @@ export function filterTokens(tokens: Token[], search: string): Token[] {
   }
 
   return tokens.filter(token => {
-    const { symbol, name } = token
+    const { symbol, name } = token.currency
     return (symbol && matchesSearch(symbol)) || (name && matchesSearch(name))
   })
 }
 
-export function useSortedTokensByQuery(tokens: Token[] | undefined, searchQuery: string): Token[] {
+export function useSortedTokensByQuery(tokens: W3Token[] | undefined, searchQuery: string): W3Token[] {
   return useMemo(() => {
     if (!tokens) {
       return []
@@ -50,15 +50,15 @@ export function useSortedTokensByQuery(tokens: Token[] | undefined, searchQuery:
       return tokens
     }
 
-    const exactMatches: Token[] = []
-    const symbolSubtrings: Token[] = []
-    const rest: Token[] = []
+    const exactMatches: W3Token[] = []
+    const symbolSubtrings: W3Token[] = []
+    const rest: W3Token[] = []
 
     // sort tokens by exact match -> subtring on symbol match -> rest
     tokens.map(token => {
-      if (token.symbol?.toLowerCase() === symbolMatch[0]) {
+      if (token.currency.symbol?.toLowerCase() === symbolMatch[0]) {
         return exactMatches.push(token)
-      } else if (token.symbol?.toLowerCase().startsWith(searchQuery.toLowerCase().trim())) {
+      } else if (token.currency.symbol?.toLowerCase().startsWith(searchQuery.toLowerCase().trim())) {
         return symbolSubtrings.push(token)
       } else {
         return rest.push(token)

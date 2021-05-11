@@ -4,9 +4,8 @@ import { DAI, UNI, USDC, USDT, WBTC } from '../../constants'
 import { STAKING_REWARDS_INTERFACE } from '../../constants/abis/staking-rewards'
 import { useActiveWeb3React } from '../../hooks'
 import { NEVER_RELOAD, useMultipleContractSingleData } from '../multicall/hooks'
-import { tryParseAmount } from '../swap/hooks'
+import { tryParseAmount } from '../swap/oldHooks'
 import useCurrentBlockTimestamp from 'hooks/useCurrentBlockTimestamp'
-import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 export const STAKING_GENESIS = 1600387200
 
@@ -240,9 +239,7 @@ export function useDerivedStakeInfo(
 } {
   const { account } = useActiveWeb3React()
 
-  const parsedInput: CurrencyAmount | undefined = reverseMapTokenAmount(
-    tryParseAmount(typedValue, mapToken(stakingToken))
-  )
+  const parsedInput: CurrencyAmount | undefined = tryParseAmount(typedValue, stakingToken)
 
   const parsedAmount =
     parsedInput && userLiquidityUnstaked && JSBI.lessThanOrEqual(parsedInput.raw, userLiquidityUnstaked.raw)
@@ -273,9 +270,7 @@ export function useDerivedUnstakeInfo(
 } {
   const { account } = useActiveWeb3React()
 
-  const parsedInput: CurrencyAmount | undefined = reverseMapTokenAmount(
-    tryParseAmount(typedValue, mapToken(stakingAmount.token))
-  )
+  const parsedInput: CurrencyAmount | undefined = tryParseAmount(typedValue, stakingAmount.token)
 
   const parsedAmount = parsedInput && JSBI.lessThanOrEqual(parsedInput.raw, stakingAmount.raw) ? parsedInput : undefined
 

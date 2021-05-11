@@ -8,7 +8,7 @@ import { isAddress } from '../utils'
 
 import { useActiveWeb3React } from './index'
 import { useBytes32TokenContract, useTokenContract } from './useContract'
-import { filterTokens } from '../components/SearchModal/filtering'
+import { filterTokens } from '../components/SearchModal/w3filtering'
 import { arrayify } from 'ethers/lib/utils'
 import { mapChainId, mapToken } from '../web3api/mapping'
 import { W3Token } from '../web3api/types'
@@ -142,7 +142,6 @@ function parseStringOrBytes32(str: string | undefined, bytes32: string | undefin
 // null if loading
 // otherwise returns the token
 export function useToken(tokenAddress?: string): W3Token | undefined | null {
-  console.log('useToken starting with token address: ' + tokenAddress)
   const { chainId } = useActiveWeb3React()
   const tokens = useAllTokens()
 
@@ -197,11 +196,10 @@ export function useToken(tokenAddress?: string): W3Token | undefined | null {
 export function useCurrency(currencyId: string | undefined): W3Token | null | undefined {
   const isETH = currencyId?.toUpperCase() === 'ETH'
   const token = useToken(isETH ? undefined : currencyId)
-  console.log('useCurrency found token: ' + token + ' isEth?: ' + isETH)
   const { chainId } = useActiveWeb3React()
   return isETH
     ? {
-        chainId: chainId ? mapChainId(chainId) : undefined,
+        chainId: mapChainId(chainId!),
         address: '',
         currency: ETHER
       }
