@@ -16,6 +16,7 @@ import useUSDCPrice from '../../utils/useUSDCPrice'
 import { AutoColumn } from '../Column'
 import { RowBetween } from '../Row'
 import { Break, CardBGImage, CardNoise, CardSection, DataCard } from '../earn/styled'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const ContentWrapper = styled(AutoColumn)`
   width: 100%;
@@ -44,14 +45,19 @@ export default function UniBalanceContent({ setShowUniBalanceModal }: { setShowU
   const { account, chainId } = useActiveWeb3React()
   const uni = chainId ? UNI[chainId] : undefined
 
-  const total = useAggregateUniBalance()
-  const uniBalance: TokenAmount | undefined = useTokenBalance(account ?? undefined, uni)
+  const w3total = useAggregateUniBalance()
+  const total: TokenAmount | undefined = reverseMapTokenAmount(w3total) as TokenAmount | undefined
+  const w3uniBalance = useTokenBalance(account ?? undefined, uni ? mapToken(uni) : undefined)
+  const uniBalance: TokenAmount | undefined = reverseMapTokenAmount(w3uniBalance) as TokenAmount | undefined
+
   const uniToClaim: TokenAmount | undefined = useTotalUniEarned()
 
   const totalSupply: TokenAmount | undefined = useTotalSupply(uni)
   const uniPrice = useUSDCPrice(uni)
   const blockTimestamp = useCurrentBlockTimestamp()
-  const unclaimedUni = useTokenBalance(useMerkleDistributorContract()?.address, uni)
+  const unclaimedUni = reverseMapTokenAmount(
+    useTokenBalance(useMerkleDistributorContract()?.address, uni ? mapToken(uni) : undefined)
+  ) as TokenAmount | undefined
   const circulation: TokenAmount | undefined = useMemo(
     () =>
       blockTimestamp && uni && chainId === ChainId.MAINNET

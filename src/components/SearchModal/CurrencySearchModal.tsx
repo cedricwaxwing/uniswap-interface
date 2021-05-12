@@ -8,6 +8,8 @@ import usePrevious from 'hooks/usePrevious'
 import Manage from './Manage'
 import { TokenList } from '@uniswap/token-lists'
 import { ImportList } from './ImportList'
+import { mapToken, reverseMapToken } from '../../web3api/mapping'
+import { W3Token } from '../../web3api/types'
 
 interface CurrencySearchModalProps {
   isOpen: boolean
@@ -79,12 +81,12 @@ export default function CurrencySearchModal({
         />
       ) : modalView === CurrencyModalView.importToken && importToken ? (
         <ImportToken
-          tokens={[importToken]}
+          tokens={[mapToken(importToken)]}
           onDismiss={onDismiss}
           onBack={() =>
             setModalView(prevView && prevView !== CurrencyModalView.importToken ? prevView : CurrencyModalView.search)
           }
-          handleCurrencySelect={handleCurrencySelect}
+          handleCurrencySelect={(currency: W3Token) => handleCurrencySelect(reverseMapToken(currency)!)}
         />
       ) : modalView === CurrencyModalView.importList && importList && listURL ? (
         <ImportList list={importList} listURL={listURL} onDismiss={onDismiss} setModalView={setModalView} />

@@ -119,16 +119,10 @@ export function reverseMapChainId(input: W3ChainId | number): UniChainId {
   }
 }
 
-export function reverseMapToken(input?: W3Token, backupChainId?: W3ChainId): UniToken | undefined {
+export function reverseMapToken(input?: W3Token): UniToken | UniCurrency | undefined {
   if (!input) return undefined
   if (isEther(input)) {
-    return new UniToken(
-      input.chainId !== undefined ? reverseMapChainId(input.chainId) : reverseMapChainId(backupChainId!),
-      '0xc778417E063141139Fce010982780140Aa0cD5Ab', // this is the testnet weth address
-      input.currency.decimals,
-      input.currency.symbol,
-      input.currency.name
-    )
+    return UniCurrency.ETHER
   }
   return new UniToken(
     reverseMapChainId(input.chainId!),
@@ -139,13 +133,19 @@ export function reverseMapToken(input?: W3Token, backupChainId?: W3ChainId): Uni
   )
 }
 
-export function reverseMapTokenAmount(input?: W3TokenAmount, backupChainId?: W3ChainId): UniTokenAmount | undefined {
+export function reverseMapTokenAmount(input?: W3TokenAmount): UniTokenAmount | UniCurrencyAmount | undefined {
   if (!input) return undefined
-  return new UniTokenAmount(reverseMapToken(input.token, backupChainId)!, input.amount)
+  if (isEther(input.token)) {
+    return UniCurrencyAmount.ether(input.amount)
+  }
+  return new UniTokenAmount(reverseMapToken(input.token) as UniToken, input.amount)
 }
 
 export function reverseMapPair(input: W3Pair): UniPair {
-  return new UniPair(reverseMapTokenAmount(input.tokenAmount0)!, reverseMapTokenAmount(input.tokenAmount1)!)
+  return new UniPair(
+    reverseMapTokenAmount(input.tokenAmount0) as UniTokenAmount,
+    reverseMapTokenAmount(input.tokenAmount1) as UniTokenAmount
+  )
 }
 
 export function reverseMapPairs(input: W3Pair[]): UniPair[] {

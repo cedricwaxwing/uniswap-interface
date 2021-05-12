@@ -1,17 +1,35 @@
-import { CurrencyAmount, ETHER, JSBI } from '@uniswap/sdk'
-import { MIN_ETH } from '../constants'
+import { W3_MIN_ETH } from '../constants'
+import { W3TokenAmount } from '../web3api/types'
+import { isEther } from '../web3api/utils'
+import Decimal from 'decimal.js'
+import { ETHER } from '../web3api/constants'
 
 /**
  * Given some token amount, return the max that can be spent of it
  * @param currencyAmount to return max of
  */
-export function maxAmountSpend(currencyAmount?: CurrencyAmount): CurrencyAmount | undefined {
+export function maxAmountSpend(currencyAmount?: W3TokenAmount): W3TokenAmount | undefined {
   if (!currencyAmount) return undefined
-  if (currencyAmount.currency === ETHER) {
-    if (JSBI.greaterThan(currencyAmount.raw, MIN_ETH)) {
-      return CurrencyAmount.ether(JSBI.subtract(currencyAmount.raw, MIN_ETH))
+  if (isEther(currencyAmount.token)) {
+    const decimalAmount = new Decimal(currencyAmount.amount)
+    if (decimalAmount.greaterThan(W3_MIN_ETH)) {
+      return {
+        token: {
+          chainId: currencyAmount.token.chainId,
+          address: '',
+          currency: ETHER
+        },
+        amount: decimalAmount.sub(W3_MIN_ETH).toFixed(0)
+      }
     } else {
-      return CurrencyAmount.ether(JSBI.BigInt(0))
+      return {
+        token: {
+          chainId: currencyAmount.token.chainId,
+          address: '',
+          currency: ETHER
+        },
+        amount: '0'
+      }
     }
   }
   return currencyAmount

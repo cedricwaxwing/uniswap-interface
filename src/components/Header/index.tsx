@@ -30,6 +30,7 @@ import { Dots } from '../swap/styleds'
 import Modal from '../Modal'
 import UniBalanceContent from './UniBalanceContent'
 import usePrevious from '../../hooks/usePrevious'
+import { reverseMapTokenAmount } from '../../web3api/mapping'
 
 const HeaderFrame = styled.div`
   display: grid;
@@ -298,7 +299,8 @@ export default function Header() {
   const { account, chainId } = useActiveWeb3React()
   const { t } = useTranslation()
 
-  const userEthBalance = useETHBalances(account ? [account] : [])?.[account ?? '']
+  const w3userEthBalance = useETHBalances(account ? [account] : [])?.[account ?? '']
+  const userEthBalance = reverseMapTokenAmount(w3userEthBalance)
   // const [isDark] = useDarkModeManager()
   const [darkMode, toggleDarkMode] = useDarkModeManager()
 
@@ -308,7 +310,8 @@ export default function Header() {
 
   const { claimTxn } = useUserHasSubmittedClaim(account ?? undefined)
 
-  const aggregateBalance: TokenAmount | undefined = useAggregateUniBalance()
+  const w3aggregateBalance = useAggregateUniBalance()
+  const aggregateBalance: TokenAmount | undefined = reverseMapTokenAmount(w3aggregateBalance) as TokenAmount | undefined
 
   const [showUniBalanceModal, setShowUniBalanceModal] = useState(false)
   const showClaimPopup = useShowClaimPopup()

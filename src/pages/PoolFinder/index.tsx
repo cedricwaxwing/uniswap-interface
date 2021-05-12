@@ -20,6 +20,8 @@ import AppBody from '../AppBody'
 import { Dots } from '../Pool/styleds'
 import { BlueCard } from '../../components/Card'
 import { TYPE } from '../../theme'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
+import { W3TokenAmount } from '../../web3api/types'
 
 enum Fields {
   TOKEN0 = 0,
@@ -52,7 +54,11 @@ export default function PoolFinder() {
         JSBI.equal(pair.reserve1.raw, JSBI.BigInt(0))
     )
 
-  const position: TokenAmount | undefined = useTokenBalance(account ?? undefined, pair?.liquidityToken)
+  const w3position: W3TokenAmount | undefined = useTokenBalance(
+    account ?? undefined,
+    pair ? mapToken(pair.liquidityToken) : undefined
+  )
+  const position = reverseMapTokenAmount(w3position) as TokenAmount | undefined
   const hasPosition = Boolean(position && JSBI.greaterThan(position.raw, JSBI.BigInt(0)))
 
   const handleCurrencySelect = useCallback(

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Token, Currency } from '@uniswap/sdk'
+import { Token } from '@uniswap/sdk'
 import styled from 'styled-components'
 import { TYPE, CloseIcon } from 'theme'
 import Card from 'components/Card'
@@ -18,6 +18,8 @@ import { ExternalLink } from '../../theme/components'
 import { useCombinedInactiveList } from 'state/lists/hooks'
 import ListLogo from 'components/ListLogo'
 import { PaddedColumn, Checkbox } from './styleds'
+import { W3Token } from '../../web3api/types'
+import { reverseMapToken } from '../../web3api/mapping'
 
 const Wrapper = styled.div`
   position: relative;
@@ -40,10 +42,10 @@ const AddressText = styled(TYPE.blue)`
 `
 
 interface ImportProps {
-  tokens: Token[]
+  tokens: W3Token[]
   onBack?: () => void
   onDismiss?: () => void
-  handleCurrencySelect?: (currency: Currency) => void
+  handleCurrencySelect?: (currency: W3Token) => void
 }
 
 export function ImportToken({ tokens, onBack, onDismiss, handleCurrencySelect }: ImportProps) {
@@ -80,11 +82,11 @@ export function ImportToken({ tokens, onBack, onDismiss, handleCurrencySelect }:
             <Card backgroundColor={theme.bg2} key={'import' + token.address} className=".token-warning-container">
               <AutoColumn gap="10px">
                 <AutoRow align="center">
-                  <CurrencyLogo currency={token} size={'24px'} />
+                  <CurrencyLogo currency={reverseMapToken(token)} size={'24px'} />
                   <TYPE.body ml="8px" mr="8px" fontWeight={500}>
-                    {token.symbol}
+                    {token.currency.symbol}
                   </TYPE.body>
-                  <TYPE.darkGray fontWeight={300}>{token.name}</TYPE.darkGray>
+                  <TYPE.darkGray fontWeight={300}>{token.currency.name}</TYPE.darkGray>
                 </AutoRow>
                 {chainId && (
                   <ExternalLink href={getEtherscanLink(chainId, token.address, 'address')}>
@@ -151,7 +153,7 @@ export function ImportToken({ tokens, onBack, onDismiss, handleCurrencySelect }:
           borderRadius="20px"
           padding="10px 1rem"
           onClick={() => {
-            tokens.map(token => addToken(token))
+            tokens.map(token => addToken(reverseMapToken(token) as Token))
             handleCurrencySelect && handleCurrencySelect(tokens[0])
           }}
           className=".token-dismiss-button"

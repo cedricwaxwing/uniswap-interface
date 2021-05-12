@@ -24,6 +24,7 @@ import { AddressZero } from '@ethersproject/constants'
 import { Dots } from '../../components/swap/styleds'
 import { Contract } from '@ethersproject/contracts'
 import { useTotalSupply } from '../../data/TotalSupply'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const WEI_DENOM = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(18))
 const ZERO = JSBI.BigInt(0)
@@ -41,8 +42,13 @@ function V1PairRemoval({
 }) {
   const { chainId } = useActiveWeb3React()
   const totalSupply = useTotalSupply(liquidityTokenAmount.token)
-  const exchangeETHBalance = useETHBalances([liquidityTokenAmount.token.address])?.[liquidityTokenAmount.token.address]
-  const exchangeTokenBalance = useTokenBalance(liquidityTokenAmount.token.address, token)
+  const w3exchangeETHBalance = useETHBalances([liquidityTokenAmount.token.address])?.[
+    liquidityTokenAmount.token.address
+  ]
+  const exchangeETHBalance = reverseMapTokenAmount(w3exchangeETHBalance) as TokenAmount | undefined
+  const w3exchangeTokenBalance = useTokenBalance(liquidityTokenAmount.token.address, mapToken(token))
+
+  const exchangeTokenBalance = reverseMapTokenAmount(w3exchangeTokenBalance) as TokenAmount
 
   const [confirmingRemoval, setConfirmingRemoval] = useState<boolean>(false)
   const [pendingRemovalHash, setPendingRemovalHash] = useState<string | null>(null)
@@ -145,7 +151,11 @@ export default function RemoveV1Exchange({
         : undefined,
     [chainId, validatedAddress, token]
   )
-  const userLiquidityBalance = useTokenBalance(account ?? undefined, liquidityToken)
+  const w3userLiquidityBalance = useTokenBalance(
+    account ?? undefined,
+    liquidityToken ? mapToken(liquidityToken) : undefined
+  )
+  const userLiquidityBalance = reverseMapTokenAmount(w3userLiquidityBalance) as TokenAmount | undefined
 
   // redirect for invalid url params
   if (!validatedAddress || tokenAddress === AddressZero) {

@@ -1,5 +1,6 @@
-import { W3ChainId, W3Currency, W3Token } from './types'
+import { W3ChainId, W3Currency, W3Token, W3TokenAmount } from './types'
 import { ETHER } from './constants'
+import Decimal from 'decimal.js-light'
 
 export function isEther(token: W3Token | undefined): boolean {
   if (!token) return false
@@ -7,6 +8,20 @@ export function isEther(token: W3Token | undefined): boolean {
     token.currency.symbol === ETHER.symbol &&
     token.currency.name === ETHER.name &&
     token.currency.decimals === ETHER.decimals
+  )
+}
+
+export function isToken(object: unknown): object is W3Token {
+  if (object === null || object === undefined) {
+    return false
+  }
+  return (
+    Object.prototype.hasOwnProperty.call(object, 'chainId') &&
+    Object.prototype.hasOwnProperty.call(object, 'address') &&
+    Object.prototype.hasOwnProperty.call(object, 'currency') &&
+    Object.prototype.hasOwnProperty.call((object as any)?.currency, 'decimals') &&
+    Object.prototype.hasOwnProperty.call((object as any)?.currency, 'symbol') &&
+    Object.prototype.hasOwnProperty.call((object as any)?.currency, 'name')
   )
 }
 
@@ -77,4 +92,25 @@ export function WETH(chainId: W3ChainId): W3Token {
     default:
       throw new Error('Unknown chain ID. This should never happen.')
   }
+}
+
+export function toSignificant(tokenAmount?: W3TokenAmount, sd = 6): string | undefined {
+  if (!tokenAmount) {
+    return undefined
+  }
+  const numerator = new Decimal(tokenAmount.amount)
+  const denominator = new Decimal(10).pow(tokenAmount.token.currency.decimals)
+  return numerator
+    .div(denominator)
+    .toSignificantDigits(sd)
+    .toString()
+}
+
+export function toExact(tokenAmount?: W3TokenAmount): string | undefined {
+  if (!tokenAmount) {
+    return undefined
+  }
+  const numerator = new Decimal(tokenAmount.amount)
+  const denominator = new Decimal(10).pow(tokenAmount.token.currency.decimals)
+  return numerator.div(denominator).toString()
 }

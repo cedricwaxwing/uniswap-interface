@@ -15,7 +15,7 @@ export function wrappedCurrencyAmount(
 }
 
 export function unwrappedToken(token: W3Token): W3Token {
-  if (token.chainId === undefined || tokenEquals(token, WETH(token.chainId))) {
+  if (isEther(token) || tokenEquals(token, WETH(token.chainId!))) {
     return {
       chainId: token.chainId,
       address: '',

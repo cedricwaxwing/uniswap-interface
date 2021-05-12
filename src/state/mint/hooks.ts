@@ -10,6 +10,7 @@ import { AppDispatch, AppState } from '../index'
 import { tryParseAmount } from '../swap/oldHooks'
 import { useCurrencyBalances } from '../wallet/hooks'
 import { Field, typeInput } from './actions'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const ZERO = JSBI.BigInt(0)
 
@@ -84,12 +85,12 @@ export function useDerivedMintInfo(
 
   // balances
   const balances = useCurrencyBalances(account ?? undefined, [
-    currencies[Field.CURRENCY_A],
-    currencies[Field.CURRENCY_B]
+    currencies[Field.CURRENCY_A] ? mapToken(currencies[Field.CURRENCY_A]!) : undefined,
+    currencies[Field.CURRENCY_B] ? mapToken(currencies[Field.CURRENCY_B]!) : undefined
   ])
   const currencyBalances: { [field in Field]?: CurrencyAmount } = {
-    [Field.CURRENCY_A]: balances[0],
-    [Field.CURRENCY_B]: balances[1]
+    [Field.CURRENCY_A]: reverseMapTokenAmount(balances[0]),
+    [Field.CURRENCY_B]: reverseMapTokenAmount(balances[1])
   }
 
   // amounts

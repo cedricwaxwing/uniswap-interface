@@ -27,6 +27,7 @@ import Loader from '../../components/Loader'
 import FormattedCurrencyAmount from '../../components/FormattedCurrencyAmount'
 import { useModalOpen, useToggleDelegateModal } from '../../state/application/hooks'
 import { ApplicationModal } from '../../state/application/actions'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const PageWrapper = styled(AutoColumn)``
 
@@ -120,7 +121,9 @@ export default function Vote() {
 
   // user data
   const availableVotes: TokenAmount | undefined = useUserVotes()
-  const uniBalance: TokenAmount | undefined = useTokenBalance(account ?? undefined, chainId ? UNI[chainId] : undefined)
+  const w3uniBalance = useTokenBalance(account ?? undefined, chainId ? mapToken(UNI[chainId]) : undefined)
+  const uniBalance: TokenAmount | undefined = reverseMapTokenAmount(w3uniBalance) as TokenAmount | undefined
+
   const userDelegatee: string | undefined = useUserDelegatee()
 
   // show delegation option if they have have a balance, but have not delegated

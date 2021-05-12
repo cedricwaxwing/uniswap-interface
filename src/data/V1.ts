@@ -20,6 +20,7 @@ import { useV1FactoryContract } from '../hooks/useContract'
 import { Version } from '../hooks/useToggledVersion'
 import { NEVER_RELOAD, useSingleCallResult, useSingleContractMultipleData } from '../state/multicall/hooks'
 import { useETHBalances, useTokenBalance, useTokenBalances } from '../state/wallet/hooks'
+import { mapToken, reverseMapTokenAmount } from '../web3api/mapping'
 
 export function useV1ExchangeAddress(tokenAddress?: string): string | undefined {
   const contract = useV1FactoryContract()
@@ -39,8 +40,10 @@ function useMockV1Pair(inputCurrency?: Currency): MockV1Pair | undefined {
 
   const isWETH = Boolean(token && token.equals(WETH[token.chainId]))
   const v1PairAddress = useV1ExchangeAddress(isWETH ? undefined : token?.address)
-  const tokenBalance = useTokenBalance(v1PairAddress, token)
-  const ETHBalance = useETHBalances([v1PairAddress])[v1PairAddress ?? '']
+  const w3tokenBalance = useTokenBalance(v1PairAddress, token ? mapToken(token) : undefined)
+  const tokenBalance = reverseMapTokenAmount(w3tokenBalance) as TokenAmount | undefined
+  const w3ETHBalance = useETHBalances([v1PairAddress])[v1PairAddress ?? '']
+  const ETHBalance = reverseMapTokenAmount(w3ETHBalance)
 
   return useMemo(
     () =>
@@ -81,12 +84,12 @@ export function useUserHasLiquidityInAllTokens(): boolean | undefined {
     [chainId, exchanges]
   )
 
-  const balances = useTokenBalances(account ?? undefined, v1ExchangeLiquidityTokens)
+  const balances = useTokenBalances(account ?? undefined, v1ExchangeLiquidityTokens.map(mapToken))
 
   return useMemo(
     () =>
       Object.keys(balances).some(tokenAddress => {
-        const b = balances[tokenAddress]?.raw
+        const b = reverseMapTokenAmount(balances[tokenAddress])?.raw
         return b && JSBI.greaterThan(b, JSBI.BigInt(0))
       }),
     [balances]

@@ -1,7 +1,7 @@
 import { W3_ZERO_PERCENT, W3_ONE_HUNDRED_PERCENT, ZERO_PERCENT, ONE_HUNDRED_PERCENT } from './../constants/index'
 import { Trade, Percent, currencyEquals } from '@uniswap/sdk'
 import { W3Trade } from '../web3api/types'
-import Decimal from 'decimal.js-light'
+import Decimal from 'decimal.js'
 import { w3TradeExecutionPrice } from '../web3api/tradeWrappers'
 import { currencyEquals as w3currencyEquals } from '../web3api/utils'
 

@@ -1,4 +1,4 @@
-import { JSBI, Token } from '@uniswap/sdk'
+import { JSBI, Token, TokenAmount } from '@uniswap/sdk'
 import React, { useCallback, useContext, useMemo, useState, useEffect } from 'react'
 import { ThemeContext } from 'styled-components'
 import { AutoColumn } from '../../components/Column'
@@ -18,6 +18,7 @@ import { Dots } from '../../components/swap/styleds'
 import { useAddUserToken } from '../../state/user/hooks'
 import { isTokenOnList } from '../../utils'
 import { useCombinedActiveList } from '../../state/lists/hooks'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 export default function MigrateV1() {
   const theme = useContext(ThemeContext)
@@ -47,13 +48,13 @@ export default function MigrateV1() {
   }, [chainId, V1Exchanges])
   const [V1LiquidityBalances, V1LiquidityBalancesLoading] = useTokenBalancesWithLoadingIndicator(
     account ?? undefined,
-    V1LiquidityTokens
+    V1LiquidityTokens.map(mapToken)
   )
   const allV1PairsWithLiquidity = V1LiquidityTokens.filter(V1LiquidityToken => {
-    const balance = V1LiquidityBalances?.[V1LiquidityToken.address]
+    const balance = reverseMapTokenAmount(V1LiquidityBalances?.[V1LiquidityToken.address])
     return balance && JSBI.greaterThan(balance.raw, JSBI.BigInt(0))
   }).map(V1LiquidityToken => {
-    const balance = V1LiquidityBalances[V1LiquidityToken.address]
+    const balance = reverseMapTokenAmount(V1LiquidityBalances[V1LiquidityToken.address]) as TokenAmount
     return balance ? (
       <V1PositionCard
         key={V1LiquidityToken.address}

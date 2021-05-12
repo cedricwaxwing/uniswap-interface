@@ -40,6 +40,7 @@ import { currencyId } from '../../utils/currencyId'
 import { PoolPriceBar } from './PoolPriceBar'
 import { useIsTransactionUnsupported } from 'hooks/Trades'
 import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter'
+import { mapTokenAmount, reverseMapTokenAmount } from '../../web3api/mapping'
 
 export default function AddLiquidity({
   match: {
@@ -103,7 +104,7 @@ export default function AddLiquidity({
     (accumulator, field) => {
       return {
         ...accumulator,
-        [field]: maxAmountSpend(currencyBalances[field])
+        [field]: reverseMapTokenAmount(maxAmountSpend(mapTokenAmount(currencyBalances[field])))
       }
     },
     {}

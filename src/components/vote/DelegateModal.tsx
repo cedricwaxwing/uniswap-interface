@@ -15,6 +15,8 @@ import { useDelegateCallback } from '../../state/governance/hooks'
 import { useTokenBalance } from '../../state/wallet/hooks'
 import { UNI } from '../../constants'
 import { LoadingView, SubmittedView } from '../ModalViews'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
+import { TokenAmount } from '@uniswap/sdk'
 
 const ContentWrapper = styled(AutoColumn)`
   width: 100%;
@@ -55,7 +57,8 @@ export default function DelegateModal({ isOpen, onDismiss, title }: VoteModalPro
   const { address: parsedAddress } = useENS(activeDelegate)
 
   // get the number of votes available to delegate
-  const uniBalance = useTokenBalance(account ?? undefined, chainId ? UNI[chainId] : undefined)
+  const w3uniBalance = useTokenBalance(account ?? undefined, chainId ? mapToken(UNI[chainId]) : undefined)
+  const uniBalance = reverseMapTokenAmount(w3uniBalance) as TokenAmount | undefined
 
   const delegateCallback = useDelegateCallback()
 

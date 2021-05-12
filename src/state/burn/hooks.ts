@@ -10,6 +10,7 @@ import { AppDispatch, AppState } from '../index'
 import { tryParseAmount } from '../swap/oldHooks'
 import { useTokenBalances } from '../wallet/hooks'
 import { Field, typeInput } from './actions'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 export function useBurnState(): AppState['burn'] {
   return useSelector<AppState, AppState['burn']>(state => state.burn)
@@ -36,8 +37,12 @@ export function useDerivedBurnInfo(
   const [, pair] = usePair(currencyA, currencyB)
 
   // balances
-  const relevantTokenBalances = useTokenBalances(account ?? undefined, [pair?.liquidityToken])
-  const userLiquidity: undefined | TokenAmount = relevantTokenBalances?.[pair?.liquidityToken?.address ?? '']
+  const relevantTokenBalances = useTokenBalances(account ?? undefined, [
+    pair ? mapToken(pair?.liquidityToken) : undefined
+  ])
+  const userLiquidity: undefined | TokenAmount = reverseMapTokenAmount(
+    relevantTokenBalances?.[pair?.liquidityToken?.address ?? '']
+  ) as TokenAmount | undefined
 
   const [tokenA, tokenB] = [wrappedCurrency(currencyA, chainId), wrappedCurrency(currencyB, chainId)]
   const tokens = {

@@ -1,7 +1,7 @@
 import useENS from '../../hooks/useENS'
 import { Version } from '../../hooks/useToggledVersion'
 import { parseUnits } from '@ethersproject/units'
-import { Currency, CurrencyAmount, ETHER, Pair, Token } from '@uniswap/sdk'
+import { Currency, ETHER, Pair, Token } from '@uniswap/sdk'
 import { ParsedQs } from 'qs'
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -17,7 +17,7 @@ import { Field, replaceSwapState, selectCurrency, setRecipient, switchCurrencies
 import { SwapState } from './reducer'
 import { w3ComputeSlippageAdjustedAmounts } from '../../utils/prices'
 import { W3Pair, W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
-import { mapChainId, mapTokenAmount, mapTrade, reverseMapToken, reverseMapTokenAmount } from '../../web3api/mapping'
+import { mapTrade, reverseMapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 import Decimal from 'decimal.js-light'
 import { isEther } from '../../web3api/utils'
 
@@ -105,7 +105,10 @@ const BAD_RECIPIENT_ADDRESSES: string[] = [
 // TODO add liquidity token to pair
 function involvesAddress(trade: W3Trade, checksummedAddress: string): boolean {
   const getAddress = (pair: W3Pair) => {
-    return Pair.getAddress(reverseMapToken(pair.tokenAmount0.token)!, reverseMapToken(pair.tokenAmount1.token)!)
+    return Pair.getAddress(
+      reverseMapToken(pair.tokenAmount0.token) as Token,
+      reverseMapToken(pair.tokenAmount1.token) as Token
+    )
   }
   return (
     trade.route.path.some(token => token.address === checksummedAddress) ||
@@ -122,7 +125,7 @@ export function useBestTrade(): {
   v2TradeAsync: Promise<W3Trade | null>
   v1Trade: W3Trade | undefined
 } {
-  const { account, chainId } = useActiveWeb3React()
+  const { account } = useActiveWeb3React()
 
   const {
     independentField,
@@ -131,24 +134,13 @@ export function useBestTrade(): {
     [Field.OUTPUT]: { currencyId: outputCurrencyId }
   } = useSwapState()
 
-  // TODO
   const inputCurrency: W3Token | undefined | null = useCurrency(inputCurrencyId)
   const outputCurrency: W3Token | undefined | null = useCurrency(outputCurrencyId)
 
-  // TODO
-  // conversion to ETHER is necessary to get the currency balance right, at least until useCurrencyBalances is adapted to new types
-  let uniInputCurrency: Currency | undefined = undefined
-  if (inputCurrency) {
-    uniInputCurrency = isEther(inputCurrency) ? ETHER : reverseMapToken(inputCurrency)
-  }
-  let uniOutputCurrency: Currency | undefined = undefined
-  if (outputCurrency) {
-    uniOutputCurrency = isEther(outputCurrency) ? ETHER : reverseMapToken(outputCurrency)
-  }
   const relevantTokenBalances = useCurrencyBalances(account ?? undefined, [
-    uniInputCurrency,
-    uniOutputCurrency
-  ]).map(uniTokenAmount => mapTokenAmount(uniTokenAmount, chainId))
+    inputCurrency ?? undefined,
+    outputCurrency ?? undefined
+  ])
 
   const isExactIn: boolean = independentField === Field.INPUT
   const parsedAmount = tryParseAmount(typedValue, (isExactIn ? inputCurrency : outputCurrency) ?? undefined)
@@ -170,13 +162,16 @@ export function useBestTrade(): {
 
   // TODO
   // get link to trade on v1, if a better rate exists
+  let uniInputCurrency: Currency | undefined = undefined
+  if (inputCurrency) {
+    uniInputCurrency = isEther(inputCurrency) ? ETHER : reverseMapToken(inputCurrency)
+  }
+  let uniOutputCurrency: Currency | undefined = undefined
+  if (outputCurrency) {
+    uniOutputCurrency = isEther(outputCurrency) ? ETHER : reverseMapToken(outputCurrency)
+  }
   const v1Trade: W3Trade | undefined = mapTrade(
-    useV1Trade(
-      isExactIn,
-      uniInputCurrency,
-      uniOutputCurrency,
-      reverseMapTokenAmount(parsedAmount, chainId ? mapChainId(chainId) : undefined) as CurrencyAmount
-    )
+    useV1Trade(isExactIn, uniInputCurrency, uniOutputCurrency, reverseMapTokenAmount(parsedAmount))
   )
 
   return {

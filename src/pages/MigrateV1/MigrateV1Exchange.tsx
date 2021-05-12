@@ -28,6 +28,7 @@ import { BackArrow, ExternalLink, TYPE } from '../../theme'
 import { getEtherscanLink, isAddress } from '../../utils'
 import { BodyWrapper } from '../AppBody'
 import { EmptyState } from './EmptyState'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const WEI_DENOM = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(18))
 const ZERO = JSBI.BigInt(0)
@@ -89,8 +90,12 @@ export function V1LiquidityInfo({
 function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount: TokenAmount; token: Token }) {
   const { account, chainId } = useActiveWeb3React()
   const totalSupply = useTotalSupply(liquidityTokenAmount.token)
-  const exchangeETHBalance = useETHBalances([liquidityTokenAmount.token.address])?.[liquidityTokenAmount.token.address]
-  const exchangeTokenBalance = useTokenBalance(liquidityTokenAmount.token.address, token)
+  const w3exchangeETHBalance = useETHBalances([liquidityTokenAmount.token.address])?.[
+    liquidityTokenAmount.token.address
+  ]
+  const exchangeETHBalance = reverseMapTokenAmount(w3exchangeETHBalance) as TokenAmount | undefined
+  const w3exchangeTokenBalance = useTokenBalance(liquidityTokenAmount.token.address, mapToken(token))
+  const exchangeTokenBalance = reverseMapTokenAmount(w3exchangeTokenBalance) as TokenAmount
 
   const [v2PairState, v2Pair] = usePair(chainId ? WETH[chainId] : undefined, token)
   const isFirstLiquidityProvider: boolean = v2PairState === PairState.NOT_EXISTS
@@ -331,7 +336,11 @@ export default function MigrateV1Exchange({
         : undefined,
     [chainId, validatedAddress, token]
   )
-  const userLiquidityBalance = useTokenBalance(account ?? undefined, liquidityToken)
+  const w3userLiquidityBalance = useTokenBalance(
+    account ?? undefined,
+    liquidityToken ? mapToken(liquidityToken) : undefined
+  )
+  const userLiquidityBalance = reverseMapTokenAmount(w3userLiquidityBalance) as TokenAmount | undefined
 
   // redirect for invalid url params
   if (!validatedAddress || tokenAddress === AddressZero) {

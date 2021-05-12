@@ -14,6 +14,7 @@ import { ReactComponent as DropDown } from '../../assets/images/dropdown.svg'
 import { useActiveWeb3React } from '../../hooks'
 import { useTranslation } from 'react-i18next'
 import useTheme from '../../hooks/useTheme'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const InputRow = styled.div<{ selected: boolean }>`
   ${({ theme }) => theme.flexRowNoWrap}
@@ -154,7 +155,8 @@ export default function CurrencyInputPanel({
 
   const [modalOpen, setModalOpen] = useState(false)
   const { account } = useActiveWeb3React()
-  const selectedCurrencyBalance = useCurrencyBalance(account ?? undefined, currency ?? undefined)
+  const w3selectedCurrencyBalance = useCurrencyBalance(account ?? undefined, currency ? mapToken(currency) : undefined)
+  const selectedCurrencyBalance = reverseMapTokenAmount(w3selectedCurrencyBalance)
   const theme = useTheme()
 
   const handleDismissSearch = useCallback(() => {

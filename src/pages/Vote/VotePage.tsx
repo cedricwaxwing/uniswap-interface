@@ -30,6 +30,7 @@ import { useTokenBalance } from '../../state/wallet/hooks'
 import useCurrentBlockTimestamp from 'hooks/useCurrentBlockTimestamp'
 import { BigNumber } from 'ethers'
 import { GreyCard } from '../../components/Card'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const PageWrapper = styled(AutoColumn)`
   width: 100%;
@@ -160,7 +161,8 @@ export default function VotePage({
     proposalData &&
     proposalData.status === ProposalState.Active
 
-  const uniBalance: TokenAmount | undefined = useTokenBalance(account ?? undefined, chainId ? UNI[chainId] : undefined)
+  const w3uniBalance = useTokenBalance(account ?? undefined, chainId ? mapToken(UNI[chainId]) : undefined)
+  const uniBalance: TokenAmount | undefined = reverseMapTokenAmount(w3uniBalance) as TokenAmount | undefined
   const userDelegatee: string | undefined = useUserDelegatee()
 
   // in blurb link to home page if they are able to unlock

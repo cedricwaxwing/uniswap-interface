@@ -21,6 +21,7 @@ import { LightGreyCard } from 'components/Card'
 import TokenListLogo from '../../assets/svg/tokenlist.svg'
 import QuestionHelper from 'components/QuestionHelper'
 import useTheme from 'hooks/useTheme'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 function currencyKey(currency: Currency): string {
   return currency instanceof Token ? currency.address : currency === ETHER ? 'ETHER' : ''
@@ -115,7 +116,8 @@ function CurrencyRow({
   const selectedTokenList = useCombinedActiveList()
   const isOnSelectedList = isTokenOnList(selectedTokenList, currency)
   const customAdded = useIsUserAddedToken(currency)
-  const balance = useCurrencyBalance(account ?? undefined, currency)
+  const w3balance = useCurrencyBalance(account ?? undefined, mapToken(currency))
+  const balance = reverseMapTokenAmount(w3balance)
 
   // only show add or remove buttons if not on selected list
   return (

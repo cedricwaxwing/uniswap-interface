@@ -21,6 +21,7 @@ import { Dots } from '../../components/swap/styleds'
 import { CardSection, DataCard, CardNoise, CardBGImage } from '../../components/earn/styled'
 import { useStakingInfo } from '../../state/stake/hooks'
 import { BIG_INT_ZERO } from '../../constants'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const PageWrapper = styled(AutoColumn)`
   max-width: 640px;
@@ -89,14 +90,14 @@ export default function Pool() {
   ])
   const [v2PairsBalances, fetchingV2PairBalances] = useTokenBalancesWithLoadingIndicator(
     account ?? undefined,
-    liquidityTokens
+    liquidityTokens.map(mapToken)
   )
 
   // fetch the reserves for all V2 pools in which the user has a balance
   const liquidityTokensWithBalances = useMemo(
     () =>
       tokenPairsWithLiquidityTokens.filter(({ liquidityToken }) =>
-        v2PairsBalances[liquidityToken.address]?.greaterThan('0')
+        reverseMapTokenAmount(v2PairsBalances[liquidityToken.address])?.greaterThan('0')
       ),
     [tokenPairsWithLiquidityTokens, v2PairsBalances]
   )

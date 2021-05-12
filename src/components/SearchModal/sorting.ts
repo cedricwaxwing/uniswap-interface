@@ -1,6 +1,7 @@
 import { Token, TokenAmount } from '@uniswap/sdk'
 import { useMemo } from 'react'
 import { useAllTokenBalances } from '../../state/wallet/hooks'
+import { reverseMapTokenAmount } from '../../web3api/mapping'
 
 // compare two token amounts with highest one coming first
 function balanceComparator(balanceA?: TokenAmount, balanceB?: TokenAmount) {
@@ -38,7 +39,11 @@ function getTokenComparator(balances: {
 }
 
 export function useTokenComparator(inverted: boolean): (tokenA: Token, tokenB: Token) => number {
-  const balances = useAllTokenBalances()
+  const w3balances = useAllTokenBalances()
+  const balances: { [tokenAddress: string]: TokenAmount | undefined } = {}
+  Object.keys(w3balances).forEach(k => {
+    balances[k] = reverseMapTokenAmount(w3balances[k]) as TokenAmount | undefined
+  })
   const comparator = useMemo(() => getTokenComparator(balances ?? {}), [balances])
   return useMemo(() => {
     if (inverted) {

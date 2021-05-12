@@ -29,6 +29,7 @@ import { usePair } from '../../data/Reserves'
 import usePrevious from '../../hooks/usePrevious'
 import useUSDCPrice from '../../utils/useUSDCPrice'
 import { BIG_INT_ZERO, BIG_INT_SECONDS_IN_WEEK } from '../../constants'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const PageWrapper = styled(AutoColumn)`
   max-width: 640px;
@@ -103,7 +104,12 @@ export default function Manage({
   const stakingInfo = useStakingInfo(stakingTokenPair)?.[0]
 
   // detect existing unstaked LP position to show add button if none found
-  const userLiquidityUnstaked = useTokenBalance(account ?? undefined, stakingInfo?.stakedAmount?.token)
+  const w3userLiquidityUnstaked = useTokenBalance(
+    account ?? undefined,
+    stakingInfo?.stakedAmount?.token ? mapToken(stakingInfo.stakedAmount.token) : undefined
+  )
+  const userLiquidityUnstaked = reverseMapTokenAmount(w3userLiquidityUnstaked) as TokenAmount | undefined
+
   const showAddLiquidityButton = Boolean(stakingInfo?.stakedAmount?.equalTo('0') && userLiquidityUnstaked?.equalTo('0'))
 
   // toggle for staking modal and unstaking modal

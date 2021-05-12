@@ -25,6 +25,7 @@ import DoubleCurrencyLogo from '../DoubleLogo'
 import { RowBetween, RowFixed, AutoRow } from '../Row'
 import { Dots } from '../swap/styleds'
 import { BIG_INT_ZERO } from '../../constants'
+import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 
 export const FixedHeightRow = styled(RowBetween)`
   height: 24px;
@@ -59,7 +60,8 @@ export function MinimalPositionCard({ pair, showUnwrapped = false, border }: Pos
 
   const [showMore, setShowMore] = useState(false)
 
-  const userPoolBalance = useTokenBalance(account ?? undefined, pair.liquidityToken)
+  const w3userPoolBalance = useTokenBalance(account ?? undefined, mapToken(pair.liquidityToken))
+  const userPoolBalance = reverseMapTokenAmount(w3userPoolBalance) as TokenAmount
   const totalPoolTokens = useTotalSupply(pair.liquidityToken)
 
   const poolTokenPercentage =
@@ -167,7 +169,8 @@ export default function FullPositionCard({ pair, border, stakedBalance }: Positi
 
   const [showMore, setShowMore] = useState(false)
 
-  const userDefaultPoolBalance = useTokenBalance(account ?? undefined, pair.liquidityToken)
+  const w3userDefaultPoolBalance = useTokenBalance(account ?? undefined, mapToken(pair.liquidityToken))
+  const userDefaultPoolBalance = reverseMapTokenAmount(w3userDefaultPoolBalance) as TokenAmount
   const totalPoolTokens = useTotalSupply(pair.liquidityToken)
 
   // if staked balance balance provided, add to standard liquidity amount

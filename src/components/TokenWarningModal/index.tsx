@@ -1,7 +1,7 @@
-import { Token } from '@uniswap/sdk'
 import React from 'react'
 import Modal from '../Modal'
 import { ImportToken } from 'components/SearchModal/ImportToken'
+import { W3Token } from '../../web3api/types'
 
 export default function TokenWarningModal({
   isOpen,
@@ -10,7 +10,7 @@ export default function TokenWarningModal({
   onDismiss
 }: {
   isOpen: boolean
-  tokens: Token[]
+  tokens: W3Token[]
   onConfirm: () => void
   onDismiss: () => void
 }) {

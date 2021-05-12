@@ -1,6 +1,6 @@
 import { W3BestTradeOptions, W3Pair, W3Token, W3TokenAmount, W3Trade } from './types'
 import { ipfsUri } from './constants'
-import Decimal from 'decimal.js-light'
+import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
 import { Web3ApiClientManager } from './Web3ApiClientManager'
 
@@ -121,6 +121,8 @@ export async function w3TradeMaximumAmountIn(trade: W3Trade, slippageTolerance: 
       slippageTolerance: slippageTolerance
     }
   })
+  console.log(slippageTolerance)
+  console.log(JSON.stringify(trade))
   const result: W3TokenAmount | undefined = query.data?.tradeMaximumAmountIn
   if (!result) {
     if (query.errors) {
