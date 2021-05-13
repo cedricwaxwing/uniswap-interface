@@ -1,4 +1,4 @@
-import { W3BestTradeOptions, W3Pair, W3Token, W3TokenAmount, W3Trade } from './types'
+import { W3BestTradeOptions, W3Pair, W3SwapParameters, W3Token, W3TokenAmount, W3Trade, W3TradeOptions } from './types'
 import { ipfsUri } from './constants'
 import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
@@ -121,8 +121,6 @@ export async function w3TradeMaximumAmountIn(trade: W3Trade, slippageTolerance: 
       slippageTolerance: slippageTolerance
     }
   })
-  console.log(slippageTolerance)
-  console.log(JSON.stringify(trade))
   const result: W3TokenAmount | undefined = query.data?.tradeMaximumAmountIn
   if (!result) {
     if (query.errors) {
@@ -160,4 +158,58 @@ export async function w3TradeMinimumAmountOut(trade: W3Trade, slippageTolerance:
     }
   }
   return result
+}
+
+export async function w3SwapCallParameters(trade: W3Trade, tradeOptions: W3TradeOptions): Promise<W3SwapParameters> {
+  const client: Web3ApiClient = Web3ApiClientManager.client
+  const query = await client.query<{
+    swapCallParameters: W3SwapParameters
+  }>({
+    uri: ipfsUri,
+    query: `query {
+        swapCallParameters(
+          trade: $trade
+          tradeOptions: tradeOptions
+         )
+       }`,
+    variables: {
+      trade: trade,
+      tradeOptions: tradeOptions
+    }
+  })
+  const result: W3SwapParameters | undefined = query.data?.swapCallParameters
+  if (!result) {
+    if (query.errors) {
+      throw Error(query.errors.map(e => e.message).toString())
+    } else {
+      throw Error('Unknown Web3API query error; query result data is undefined')
+    }
+  }
+  return result
+}
+
+export async function w3TradeSlippage(trade: W3Trade): Promise<Decimal> {
+  const client: Web3ApiClient = Web3ApiClientManager.client
+  const query = await client.query<{
+    tradeSlippage: string
+  }>({
+    uri: ipfsUri,
+    query: `query {
+        tradeSlippage(
+          trade: $trade
+         )
+       }`,
+    variables: {
+      trade: trade
+    }
+  })
+  const result: string | undefined = query.data?.tradeSlippage
+  if (!result) {
+    if (query.errors) {
+      throw Error(query.errors.map(e => e.message).toString())
+    } else {
+      throw Error('Unknown Web3API query error; query result data is undefined')
+    }
+  }
+  return new Decimal(result)
 }

@@ -145,16 +145,16 @@ export function getTradeVersion(trade?: Trade): Version | undefined {
 }
 
 // returns the v1 exchange against which a trade should be executed
-export function useV1TradeExchangeAddress(trade: Trade | undefined): string | undefined {
+export function useV1TradeExchangeAddress(trade: Trade | undefined, tradeVersion?: Version): string | undefined {
   const tokenAddress: string | undefined = useMemo(() => {
     if (!trade) return undefined
-    const isV1 = getTradeVersion(trade) === Version.v1
+    const isV1 = tradeVersion === Version.v1
     if (!isV1) return undefined
     return trade.inputAmount instanceof TokenAmount
       ? trade.inputAmount.token.address
       : trade.outputAmount instanceof TokenAmount
       ? trade.outputAmount.token.address
       : undefined
-  }, [trade])
+  }, [trade, tradeVersion])
   return useV1ExchangeAddress(tokenAddress)
 }

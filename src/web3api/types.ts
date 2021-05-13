@@ -1,9 +1,5 @@
 // NOTE: this should be auto-generated in the future
 
-export interface Query {
-  bestTradeExactIn(pairs: W3Pair[], amountIn: W3TokenAmount, tokenOut: W3Token, options: W3BestTradeOptions): W3Trade[]
-}
-
 export enum W3ChainId {
   MAINNET = 0,
   ROPSTEN = 1,
@@ -56,4 +52,19 @@ export interface W3Route {
 export interface W3BestTradeOptions {
   maxNumResults?: number
   maxHops?: number
+}
+
+export interface W3SwapParameters {
+  methodName: string
+  args: string[]
+  value: string
+}
+
+export interface W3TradeOptions {
+  allowedSlippage: string
+  recipient: string
+  unixTimestamp?: number
+  ttl?: number
+  deadline?: number
+  feeOnTransfer?: boolean
 }

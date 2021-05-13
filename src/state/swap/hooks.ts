@@ -19,25 +19,25 @@ import { w3ComputeSlippageAdjustedAmounts } from '../../utils/prices'
 import { W3Pair, W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
 import { mapTrade, reverseMapToken, reverseMapTokenAmount } from '../../web3api/mapping'
 import Decimal from 'decimal.js-light'
-import { isEther } from '../../web3api/utils'
+import { isEther, isToken } from '../../web3api/utils'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
 }
 
 export function useSwapActionHandlers(): {
-  onCurrencySelection: (field: Field, currency: Currency) => void
+  onCurrencySelection: (field: Field, currency: W3Token) => void
   onSwitchTokens: () => void
   onUserInput: (field: Field, typedValue: string) => void
   onChangeRecipient: (recipient: string | null) => void
 } {
   const dispatch = useDispatch<AppDispatch>()
   const onCurrencySelection = useCallback(
-    (field: Field, currency: Currency) => {
+    (field: Field, currency: W3Token) => {
       dispatch(
         selectCurrency({
           field,
-          currencyId: currency instanceof Token ? currency.address : currency === ETHER ? 'ETH' : ''
+          currencyId: isToken(currency) && !isEther(currency) ? currency.address : isEther(currency) ? 'ETH' : ''
         })
       )
     },
@@ -160,7 +160,7 @@ export function useBestTrade(): {
     [Field.OUTPUT]: outputCurrency ?? undefined
   }
 
-  // TODO
+  // TODO: replace sdk in V1Trade functions
   // get link to trade on v1, if a better rate exists
   let uniInputCurrency: Currency | undefined = undefined
   if (inputCurrency) {

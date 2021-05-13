@@ -1,17 +1,17 @@
 import { MaxUint256 } from '@ethersproject/constants'
 import { TransactionResponse } from '@ethersproject/providers'
-import { Trade, TokenAmount, CurrencyAmount, ETHER } from '@uniswap/sdk'
+import { TokenAmount, CurrencyAmount, ETHER } from '@uniswap/sdk'
 import { useCallback, useMemo } from 'react'
 import { ROUTER_ADDRESS } from '../constants'
 import { useTokenAllowance } from '../data/Allowances'
-import { getTradeVersion, useV1TradeExchangeAddress } from '../data/V1'
-import { Field } from '../state/swap/actions'
+import { useV1TradeExchangeAddress } from '../data/V1'
 import { useTransactionAdder, useHasPendingApproval } from '../state/transactions/hooks'
-import { computeSlippageAdjustedAmounts } from '../utils/prices'
 import { calculateGasMargin } from '../utils'
 import { useTokenContract } from './useContract'
 import { useActiveWeb3React } from './index'
 import { Version } from './useToggledVersion'
+import { W3TokenAmount, W3Trade } from '../web3api/types'
+import { reverseMapTokenAmount, reverseMapTrade } from '../web3api/mapping'
 
 export enum ApprovalState {
   UNKNOWN,
@@ -20,6 +20,7 @@ export enum ApprovalState {
   APPROVED
 }
 
+// TODO
 // returns a variable indicating the state of the approval and a function which approves if necessary or early returns
 export function useApproveCallback(
   amountToApprove?: CurrencyAmount,
@@ -100,12 +101,8 @@ export function useApproveCallback(
 }
 
 // wraps useApproveCallback in the context of a swap
-export function useApproveCallbackFromTrade(trade?: Trade, allowedSlippage = 0) {
-  const amountToApprove = useMemo(
-    () => (trade ? computeSlippageAdjustedAmounts(trade, allowedSlippage)[Field.INPUT] : undefined),
-    [trade, allowedSlippage]
-  )
-  const tradeIsV1 = getTradeVersion(trade) === Version.v1
-  const v1ExchangeAddress = useV1TradeExchangeAddress(trade)
-  return useApproveCallback(amountToApprove, tradeIsV1 ? v1ExchangeAddress : ROUTER_ADDRESS)
+export function useApproveCallbackFromTrade(trade?: W3Trade, amountToApprove?: W3TokenAmount, tradeVersion?: Version) {
+  const tradeIsV1 = tradeVersion === Version.v1
+  const v1ExchangeAddress = useV1TradeExchangeAddress(trade ? reverseMapTrade(trade) : undefined, tradeVersion)
+  return useApproveCallback(reverseMapTokenAmount(amountToApprove), tradeIsV1 ? v1ExchangeAddress : ROUTER_ADDRESS)
 }

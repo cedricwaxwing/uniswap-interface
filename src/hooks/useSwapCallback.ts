@@ -1,9 +1,9 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { Contract } from '@ethersproject/contracts'
-import { JSBI, Percent, Router, SwapParameters, Trade, TradeType } from '@uniswap/sdk'
+import { JSBI, Percent, SwapParameters } from '@uniswap/sdk'
 import { useMemo } from 'react'
-import { BIPS_BASE, INITIAL_ALLOWED_SLIPPAGE } from '../constants'
-import { getTradeVersion, useV1TradeExchangeAddress } from '../data/V1'
+import { BIPS_BASE, INITIAL_ALLOWED_SLIPPAGE, W3BIPS_BASE } from '../constants'
+import { useV1TradeExchangeAddress } from '../data/V1'
 import { useTransactionAdder } from '../state/transactions/hooks'
 import { calculateGasMargin, getRouterContract, isAddress, shortenAddress } from '../utils'
 import isZero from '../utils/isZero'
@@ -12,7 +12,12 @@ import { useActiveWeb3React } from './index'
 import { useV1ExchangeContract } from './useContract'
 import useTransactionDeadline from './useTransactionDeadline'
 import useENS from './useENS'
-import { Version } from './useToggledVersion'
+import useToggledVersion, { Version } from './useToggledVersion'
+import { W3SwapParameters, W3Trade, W3TradeType } from '../web3api/types'
+import { reverseMapTrade } from '../web3api/mapping'
+import { w3SwapCallParameters } from '../web3api/tradeWrappers'
+import Decimal from 'decimal.js'
+import { toSignificant } from '../web3api/utils'
 
 export enum SwapCallbackState {
   INVALID,
@@ -20,9 +25,14 @@ export enum SwapCallbackState {
   VALID
 }
 
+interface SwapCallAsync {
+  contract: Contract
+  parameters: SwapParameters | Promise<W3SwapParameters>
+}
+
 interface SwapCall {
   contract: Contract
-  parameters: SwapParameters
+  parameters: SwapParameters | W3SwapParameters
 }
 
 interface SuccessfulCall {
@@ -44,20 +54,24 @@ type EstimatedSwapCall = SuccessfulCall | FailedCall
  * @param recipientAddressOrName
  */
 function useSwapCallArguments(
-  trade: Trade | undefined, // trade to execute, required
+  trade: W3Trade | undefined, // trade to execute, required
   allowedSlippage: number = INITIAL_ALLOWED_SLIPPAGE, // in bips
   recipientAddressOrName: string | null // the ENS name or address of the recipient of the trade, or null if swap should be returned to sender
-): SwapCall[] {
+): SwapCallAsync[] {
   const { account, chainId, library } = useActiveWeb3React()
+  const toggledVersion = useToggledVersion()
 
   const { address: recipientAddress } = useENS(recipientAddressOrName)
   const recipient = recipientAddressOrName === null ? account : recipientAddress
   const deadline = useTransactionDeadline()
 
-  const v1Exchange = useV1ExchangeContract(useV1TradeExchangeAddress(trade), true)
+  const v1Exchange = useV1ExchangeContract(
+    useV1TradeExchangeAddress(trade ? reverseMapTrade(trade) : undefined, toggledVersion),
+    true
+  )
 
   return useMemo(() => {
-    const tradeVersion = getTradeVersion(trade)
+    const tradeVersion = toggledVersion
     if (!trade || !recipient || !library || !account || !tradeVersion || !chainId || !deadline) return []
 
     const contract: Contract | null =
@@ -71,19 +85,19 @@ function useSwapCallArguments(
     switch (tradeVersion) {
       case Version.v2:
         swapMethods.push(
-          Router.swapCallParameters(trade, {
+          w3SwapCallParameters(trade, {
             feeOnTransfer: false,
-            allowedSlippage: new Percent(JSBI.BigInt(allowedSlippage), BIPS_BASE),
+            allowedSlippage: new Decimal(allowedSlippage).div(W3BIPS_BASE).toString(),
             recipient,
             deadline: deadline.toNumber()
           })
         )
 
-        if (trade.tradeType === TradeType.EXACT_INPUT) {
+        if (trade.tradeType === W3TradeType.EXACT_INPUT) {
           swapMethods.push(
-            Router.swapCallParameters(trade, {
+            w3SwapCallParameters(trade, {
               feeOnTransfer: true,
-              allowedSlippage: new Percent(JSBI.BigInt(allowedSlippage), BIPS_BASE),
+              allowedSlippage: new Decimal(allowedSlippage).div(W3BIPS_BASE).toString(),
               recipient,
               deadline: deadline.toNumber()
             })
@@ -92,7 +106,7 @@ function useSwapCallArguments(
         break
       case Version.v1:
         swapMethods.push(
-          v1SwapArguments(trade, {
+          v1SwapArguments(reverseMapTrade(trade), {
             allowedSlippage: new Percent(JSBI.BigInt(allowedSlippage), BIPS_BASE),
             recipient,
             deadline: deadline.toNumber()
@@ -101,15 +115,16 @@ function useSwapCallArguments(
         break
     }
     return swapMethods.map(parameters => ({ parameters, contract }))
-  }, [account, allowedSlippage, chainId, deadline, library, recipient, trade, v1Exchange])
+  }, [account, allowedSlippage, chainId, deadline, library, recipient, trade, v1Exchange, toggledVersion])
 }
 
 // returns a function that will execute a swap, if the parameters are all valid
 // and the user has approved the slippage adjusted input amount for the trade
 export function useSwapCallback(
-  trade: Trade | undefined, // trade to execute, required
+  trade: W3Trade | undefined, // trade to execute, required
   allowedSlippage: number = INITIAL_ALLOWED_SLIPPAGE, // in bips
-  recipientAddressOrName: string | null // the ENS name or address of the recipient of the trade, or null if swap should be returned to sender
+  recipientAddressOrName: string | null, // the ENS name or address of the recipient of the trade, or null if swap should be returned to sender
+  tradeVersion: Version
 ): { state: SwapCallbackState; callback: null | (() => Promise<string>); error: string | null } {
   const { account, chainId, library } = useActiveWeb3React()
 
@@ -132,13 +147,17 @@ export function useSwapCallback(
       }
     }
 
-    const tradeVersion = getTradeVersion(trade)
-
     return {
       state: SwapCallbackState.VALID,
       callback: async function onSwap(): Promise<string> {
         const estimatedCalls: EstimatedSwapCall[] = await Promise.all(
-          swapCalls.map(call => {
+          swapCalls.map(async callAsync => {
+            let call: SwapCall
+            if (callAsync.parameters instanceof Promise) {
+              call = { parameters: await callAsync.parameters, contract: callAsync.contract }
+            } else {
+              call = { parameters: callAsync.parameters, contract: callAsync.contract }
+            }
             const {
               parameters: { methodName, args, value },
               contract
@@ -203,10 +222,10 @@ export function useSwapCallback(
           ...(value && !isZero(value) ? { value, from: account } : { from: account })
         })
           .then((response: any) => {
-            const inputSymbol = trade.inputAmount.currency.symbol
-            const outputSymbol = trade.outputAmount.currency.symbol
-            const inputAmount = trade.inputAmount.toSignificant(3)
-            const outputAmount = trade.outputAmount.toSignificant(3)
+            const inputSymbol = trade.inputAmount.token.currency.symbol
+            const outputSymbol = trade.outputAmount.token.currency.symbol
+            const inputAmount = toSignificant(trade.inputAmount, 3)
+            const outputAmount = toSignificant(trade.outputAmount, 3)
 
             const base = `Swap ${inputAmount} ${inputSymbol} for ${outputAmount} ${outputSymbol}`
             const withRecipient =
@@ -240,5 +259,5 @@ export function useSwapCallback(
       },
       error: null
     }
-  }, [trade, library, account, chainId, recipient, recipientAddressOrName, swapCalls, addTransaction])
+  }, [trade, library, account, chainId, recipient, recipientAddressOrName, swapCalls, addTransaction, tradeVersion])
 }

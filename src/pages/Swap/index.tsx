@@ -22,7 +22,6 @@ import ProgressSteps from '../../components/ProgressSteps'
 import SwapHeader from '../../components/swap/SwapHeader'
 
 import { INITIAL_ALLOWED_SLIPPAGE } from '../../constants'
-import { getTradeVersion } from '../../data/V1'
 import { useActiveWeb3React } from '../../hooks'
 import { useAllTokens, useCurrency } from '../../hooks/W3Tokens'
 import { ApprovalState, useApproveCallbackFromTrade } from '../../hooks/useApproveCallback'
@@ -43,7 +42,7 @@ import {
 import { useExpertModeManager, useUserSlippageTolerance, useUserSingleHopOnly } from '../../state/user/hooks'
 import { LinkStyledButton, TYPE } from '../../theme'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
-import { computeTradePriceBreakdown, warningSeverity } from '../../utils/prices'
+import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown, w3warningSeverity } from '../../utils/prices'
 import AppBody from '../AppBody'
 import { ClickableText } from '../Pool/styleds'
 import Loader from '../../components/Loader'
@@ -52,8 +51,9 @@ import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter
 import { w3IsTradeBetter } from 'utils/trades'
 import { RouteComponentProps } from 'react-router-dom'
 import { W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
-import { reverseMapToken, reverseMapTrade } from '../../web3api/mapping'
+import { mapToken, reverseMapToken, reverseMapTrade } from '../../web3api/mapping'
 import { isEther, isToken, toExact, toSignificant } from '../../web3api/utils'
+import { Currency } from '@uniswap/sdk'
 
 export default function Swap({ history }: RouteComponentProps) {
   const loadedUrlParams = useDefaultsFromURLSearch()
@@ -157,7 +157,6 @@ export default function Swap({ history }: RouteComponentProps) {
         [Field.OUTPUT]: independentField === Field.OUTPUT ? parsedAmount : trade?.outputAmount
       }
 
-  // TODO
   const { onSwitchTokens, onCurrencySelection, onUserInput, onChangeRecipient } = useSwapActionHandlers()
   const isValid = !swapInputError
   const dependentField: Field = independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT
@@ -213,10 +212,15 @@ export default function Swap({ history }: RouteComponentProps) {
 
   // TODO
   // check whether the user has approved the router on the input token
-  const [approval, approveCallback] = useApproveCallbackFromTrade(
-    trade ? reverseMapTrade(trade) : undefined,
-    allowedSlippage
-  )
+  const [amountToApprove, setAmountToApprove] = useState<W3TokenAmount | undefined>(undefined)
+  useEffect(() => {
+    if (trade) {
+      w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage).then(amounts => setAmountToApprove(amounts[Field.INPUT]))
+    } else {
+      setAmountToApprove(undefined)
+    }
+  }, [trade, allowedSlippage])
+  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, amountToApprove, toggledVersion)
 
   // check if user has gone through approval process, used to show two step buttons, reset on token change
   const [approvalSubmitted, setApprovalSubmitted] = useState<boolean>(false)
@@ -235,12 +239,19 @@ export default function Swap({ history }: RouteComponentProps) {
 
   // the callback to execute the swap
   const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(
-    trade ? reverseMapTrade(trade) : undefined,
+    trade,
     allowedSlippage,
-    recipient
+    recipient,
+    toggledVersion
   )
 
-  const { priceImpactWithoutFee } = computeTradePriceBreakdown(trade ? reverseMapTrade(trade) : undefined)
+  const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
+  useEffect(() => {
+    w3computeTradePriceBreakdown(trade).then(breakdown => {
+      const { priceImpactWithoutFee } = breakdown
+      setPriceImpactWithoutFee(priceImpactWithoutFee)
+    })
+  }, [trade])
 
   const [singleHopOnly] = useUserSingleHopOnly()
 
@@ -267,7 +278,7 @@ export default function Swap({ history }: RouteComponentProps) {
           label: [
             trade?.inputAmount?.token?.currency?.symbol,
             trade?.outputAmount?.token?.currency?.symbol,
-            getTradeVersion(trade ? reverseMapTrade(trade) : undefined)
+            toggledVersion
           ].join('/')
         })
 
@@ -294,14 +305,15 @@ export default function Swap({ history }: RouteComponentProps) {
     recipientAddress,
     account,
     trade,
-    singleHopOnly
+    singleHopOnly,
+    toggledVersion
   ])
 
   // errors
   const [showInverted, setShowInverted] = useState<boolean>(false)
 
   // warnings on slippage
-  const priceImpactSeverity = warningSeverity(priceImpactWithoutFee)
+  const priceImpactSeverity = w3warningSeverity(priceImpactWithoutFee)
 
   // show approve flow when: no error on inputs, not approved or pending, or approved in current session
   // never show if price impact is above threshold in non expert mode
@@ -376,7 +388,7 @@ export default function Swap({ history }: RouteComponentProps) {
               currency={reverseMapToken(currencies[Field.INPUT])}
               onUserInput={handleTypeInput}
               onMax={handleMaxInput}
-              onCurrencySelect={handleInputSelect}
+              onCurrencySelect={(currency: Currency) => handleInputSelect(mapToken(currency))}
               otherCurrency={reverseMapToken(currencies[Field.OUTPUT])}
               id="swap-currency-input"
             />
