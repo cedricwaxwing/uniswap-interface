@@ -9,9 +9,10 @@ import { AutoColumn } from 'components/Column'
 import CurrencyLogo from 'components/CurrencyLogo'
 import { useActiveWeb3React } from 'hooks'
 import { getEtherscanLink } from 'utils'
-import { Currency, Token } from '@uniswap/sdk'
-import { wrappedCurrency } from 'utils/wrappedCurrency'
-import { useUnsupportedTokens } from '../../hooks/Tokens'
+import { wrappedCurrency } from 'utils/w3WrappedCurrency'
+import { useUnsupportedTokens } from '../../hooks/W3Tokens'
+import { W3Token } from '../../web3api/types'
+import { mapChainId, reverseMapToken } from '../../web3api/mapping'
 
 const DetailsFooter = styled.div<{ show: boolean }>`
   padding-top: calc(16px + 2rem);
@@ -43,7 +44,7 @@ export default function UnsupportedCurrencyFooter({
   currencies
 }: {
   show: boolean
-  currencies: (Currency | undefined)[]
+  currencies: (W3Token | undefined)[]
 }) {
   const { chainId } = useActiveWeb3React()
   const [showDetails, setShowDetails] = useState(false)
@@ -51,11 +52,11 @@ export default function UnsupportedCurrencyFooter({
   const tokens =
     chainId && currencies
       ? currencies.map(currency => {
-          return wrappedCurrency(currency, chainId)
+          return wrappedCurrency(currency, mapChainId(chainId))
         })
       : []
 
-  const unsupportedTokens: { [address: string]: Token } = useUnsupportedTokens()
+  const unsupportedTokens: { [address: string]: W3Token } = useUnsupportedTokens()
 
   return (
     <DetailsFooter show={show}>
@@ -74,8 +75,8 @@ export default function UnsupportedCurrencyFooter({
                   <OutlineCard key={token.address?.concat('not-supported')}>
                     <AutoColumn gap="10px">
                       <AutoRow gap="5px" align="center">
-                        <CurrencyLogo currency={token} size={'24px'} />
-                        <TYPE.body fontWeight={500}>{token.symbol}</TYPE.body>
+                        <CurrencyLogo currency={reverseMapToken(token)} size={'24px'} />
+                        <TYPE.body fontWeight={500}>{token.currency.symbol}</TYPE.body>
                       </AutoRow>
                       {chainId && (
                         <ExternalLink href={getEtherscanLink(chainId, token.address, 'address')}>

@@ -169,7 +169,7 @@ export async function w3SwapCallParameters(trade: W3Trade, tradeOptions: W3Trade
     query: `query {
         swapCallParameters(
           trade: $trade
-          tradeOptions: tradeOptions
+          tradeOptions: $tradeOptions
          )
        }`,
     variables: {
@@ -191,7 +191,7 @@ export async function w3SwapCallParameters(trade: W3Trade, tradeOptions: W3Trade
 export async function w3TradeSlippage(trade: W3Trade): Promise<Decimal> {
   const client: Web3ApiClient = Web3ApiClientManager.client
   const query = await client.query<{
-    tradeSlippage: string
+    tradeSlippage: W3TokenAmount
   }>({
     uri: ipfsUri,
     query: `query {
@@ -203,7 +203,7 @@ export async function w3TradeSlippage(trade: W3Trade): Promise<Decimal> {
       trade: trade
     }
   })
-  const result: string | undefined = query.data?.tradeSlippage
+  const result: string | undefined = query.data?.tradeSlippage.amount
   if (!result) {
     if (query.errors) {
       throw Error(query.errors.map(e => e.message).toString())

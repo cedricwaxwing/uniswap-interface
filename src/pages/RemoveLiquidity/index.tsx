@@ -43,6 +43,7 @@ import { Field } from '../../state/burn/actions'
 import { useWalletModalToggle } from '../../state/application/hooks'
 import { useUserSlippageTolerance } from '../../state/user/hooks'
 import { BigNumber } from '@ethersproject/bignumber'
+import { mapTokenAmount } from '../../web3api/mapping'
 
 export default function RemoveLiquidity({
   history,
@@ -100,7 +101,7 @@ export default function RemoveLiquidity({
 
   // allowance handling
   const [signatureData, setSignatureData] = useState<{ v: number; r: string; s: string; deadline: number } | null>(null)
-  const [approval, approveCallback] = useApproveCallback(parsedAmounts[Field.LIQUIDITY], ROUTER_ADDRESS)
+  const [approval, approveCallback] = useApproveCallback(mapTokenAmount(parsedAmounts[Field.LIQUIDITY]), ROUTER_ADDRESS)
 
   const isArgentWallet = useIsArgentWallet()
 

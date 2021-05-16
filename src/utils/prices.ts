@@ -10,7 +10,12 @@ import { ALLOWED_PRICE_IMPACT_HIGH, ALLOWED_PRICE_IMPACT_LOW, ALLOWED_PRICE_IMPA
 import { Field } from '../state/swap/actions'
 import { basisPointsToPercent, w3BasisPointsToPercent } from './index'
 import { W3TokenAmount, W3Trade } from '../web3api/types'
-import { w3TradeMaximumAmountIn, w3TradeMinimumAmountOut, w3TradeSlippage } from '../web3api/tradeWrappers'
+import {
+  w3TradeExecutionPrice,
+  w3TradeMaximumAmountIn,
+  w3TradeMinimumAmountOut,
+  w3TradeSlippage
+} from '../web3api/tradeWrappers'
 import Decimal from 'decimal.js'
 import { isEther } from '../web3api/utils'
 import { ETHER } from '../web3api/constants'
@@ -61,7 +66,7 @@ export async function w3computeTradePriceBreakdown(
   trade?: W3Trade | null
 ): Promise<{ priceImpactWithoutFee: Decimal | undefined; realizedLPFee: W3TokenAmount | undefined | null }> {
   // for each hop in our trade, take away the x*y=k price impact from 0.3% fees
-  // e.g. for 3 tokens/2 hops: 1 - ((1 - .03) * (1-.03)) // TODO
+  // e.g. for 3 tokens/2 hops: 1 - ((1 - .03) * (1-.03))
   const realizedLPFee = !trade
     ? undefined
     : W3ONE_HUNDRED_PERCENT.sub(
@@ -72,8 +77,9 @@ export async function w3computeTradePriceBreakdown(
       )
 
   // remove lp fees from price impact
-  // the x*y=k impact
-  const priceImpactWithoutFee = trade && realizedLPFee ? (await w3TradeSlippage(trade)).sub(realizedLPFee) : undefined
+  // the x*y=k impact // TODO: remove the div by 100 once bug fix gets merged
+  const priceImpactWithoutFee =
+    trade && realizedLPFee ? (await w3TradeSlippage(trade)).div(100).sub(realizedLPFee) : undefined
 
   // the amount of the input that accrues to LPs
   const realizedLPFeeAmount =
@@ -114,8 +120,8 @@ export async function w3ComputeSlippageAdjustedAmounts(
 ): Promise<{ [field in Field]?: W3TokenAmount }> {
   const pct = w3BasisPointsToPercent(allowedSlippage)
   return {
-    [Field.INPUT]: trade ? await w3TradeMaximumAmountIn(trade, pct.toFixed(18)) : undefined,
-    [Field.OUTPUT]: trade ? await w3TradeMinimumAmountOut(trade, pct.toFixed(18)) : undefined
+    [Field.INPUT]: trade ? await w3TradeMaximumAmountIn(trade, pct.toString()) : undefined,
+    [Field.OUTPUT]: trade ? await w3TradeMinimumAmountOut(trade, pct.toString()) : undefined
   }
 }
 
@@ -145,5 +151,19 @@ export function formatExecutionPrice(trade?: Trade, inverted?: boolean): string 
       }`
     : `${trade.executionPrice.toSignificant(6)} ${trade.outputAmount.currency.symbol} / ${
         trade.inputAmount.currency.symbol
+      }`
+}
+
+export async function w3formatExecutionPrice(trade?: W3Trade, inverted?: boolean): Promise<string> {
+  if (!trade) {
+    return ''
+  }
+  const executionPrice = await w3TradeExecutionPrice(trade)
+  return inverted
+    ? `${new Decimal(1).div(executionPrice).toSignificantDigits(6)} ${trade.inputAmount.token.currency.symbol} / ${
+        trade.outputAmount.token.currency.symbol
+      }`
+    : `${executionPrice.toSignificantDigits(6)} ${trade.outputAmount.token.currency.symbol} / ${
+        trade.inputAmount.token.currency.symbol
       }`
 }

@@ -1,17 +1,15 @@
 import { MaxUint256 } from '@ethersproject/constants'
 import { TransactionResponse } from '@ethersproject/providers'
-import { TokenAmount, CurrencyAmount, ETHER } from '@uniswap/sdk'
 import { useCallback, useMemo } from 'react'
 import { ROUTER_ADDRESS } from '../constants'
 import { useTokenAllowance } from '../data/Allowances'
-import { useV1TradeExchangeAddress } from '../data/V1'
 import { useTransactionAdder, useHasPendingApproval } from '../state/transactions/hooks'
 import { calculateGasMargin } from '../utils'
 import { useTokenContract } from './useContract'
 import { useActiveWeb3React } from './index'
-import { Version } from './useToggledVersion'
 import { W3TokenAmount, W3Trade } from '../web3api/types'
-import { reverseMapTokenAmount, reverseMapTrade } from '../web3api/mapping'
+import { isEther } from '../web3api/utils'
+import Decimal from 'decimal.js'
 
 export enum ApprovalState {
   UNKNOWN,
@@ -20,26 +18,25 @@ export enum ApprovalState {
   APPROVED
 }
 
-// TODO
 // returns a variable indicating the state of the approval and a function which approves if necessary or early returns
 export function useApproveCallback(
-  amountToApprove?: CurrencyAmount,
+  amountToApprove?: W3TokenAmount,
   spender?: string
 ): [ApprovalState, () => Promise<void>] {
   const { account } = useActiveWeb3React()
-  const token = amountToApprove instanceof TokenAmount ? amountToApprove.token : undefined
+  const token = !isEther(amountToApprove?.token) ? amountToApprove?.token : undefined
   const currentAllowance = useTokenAllowance(token, account ?? undefined, spender)
   const pendingApproval = useHasPendingApproval(token?.address, spender)
 
   // check the current approval status
   const approvalState: ApprovalState = useMemo(() => {
     if (!amountToApprove || !spender) return ApprovalState.UNKNOWN
-    if (amountToApprove.currency === ETHER) return ApprovalState.APPROVED
+    if (isEther(amountToApprove.token)) return ApprovalState.APPROVED
     // we might not have enough data to know whether or not we need to approve
     if (!currentAllowance) return ApprovalState.UNKNOWN
 
     // amountToApprove will be defined if currentAllowance is
-    return currentAllowance.lessThan(amountToApprove)
+    return new Decimal(currentAllowance.amount).lessThan(amountToApprove.amount)
       ? pendingApproval
         ? ApprovalState.PENDING
         : ApprovalState.NOT_APPROVED
@@ -78,16 +75,16 @@ export function useApproveCallback(
     const estimatedGas = await tokenContract.estimateGas.approve(spender, MaxUint256).catch(() => {
       // general fallback for tokens who restrict approval amounts
       useExact = true
-      return tokenContract.estimateGas.approve(spender, amountToApprove.raw.toString())
+      return tokenContract.estimateGas.approve(spender, amountToApprove.amount)
     })
 
     return tokenContract
-      .approve(spender, useExact ? amountToApprove.raw.toString() : MaxUint256, {
+      .approve(spender, useExact ? amountToApprove.amount : MaxUint256, {
         gasLimit: calculateGasMargin(estimatedGas)
       })
       .then((response: TransactionResponse) => {
         addTransaction(response, {
-          summary: 'Approve ' + amountToApprove.currency.symbol,
+          summary: 'Approve ' + amountToApprove.token.currency.symbol,
           approval: { tokenAddress: token.address, spender: spender }
         })
       })
@@ -101,8 +98,6 @@ export function useApproveCallback(
 }
 
 // wraps useApproveCallback in the context of a swap
-export function useApproveCallbackFromTrade(trade?: W3Trade, amountToApprove?: W3TokenAmount, tradeVersion?: Version) {
-  const tradeIsV1 = tradeVersion === Version.v1
-  const v1ExchangeAddress = useV1TradeExchangeAddress(trade ? reverseMapTrade(trade) : undefined, tradeVersion)
-  return useApproveCallback(reverseMapTokenAmount(amountToApprove), tradeIsV1 ? v1ExchangeAddress : ROUTER_ADDRESS)
+export function useApproveCallbackFromTrade(trade?: W3Trade, amountToApprove?: W3TokenAmount) {
+  return useApproveCallback(amountToApprove, ROUTER_ADDRESS)
 }

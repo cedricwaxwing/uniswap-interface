@@ -28,7 +28,7 @@ import { BackArrow, ExternalLink, TYPE } from '../../theme'
 import { getEtherscanLink, isAddress } from '../../utils'
 import { BodyWrapper } from '../AppBody'
 import { EmptyState } from './EmptyState'
-import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
+import { mapToken, mapTokenAmount, reverseMapTokenAmount } from '../../web3api/mapping'
 
 const WEI_DENOM = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(18))
 const ZERO = JSBI.BigInt(0)
@@ -115,7 +115,7 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
     ? new TokenAmount(token, shareFraction.multiply(exchangeTokenBalance.raw).quotient)
     : new TokenAmount(token, ZERO)
 
-  const [approval, approve] = useApproveCallback(liquidityTokenAmount, MIGRATOR_ADDRESS)
+  const [approval, approve] = useApproveCallback(mapTokenAmount(liquidityTokenAmount), MIGRATOR_ADDRESS)
 
   const v1SpotPrice =
     exchangeTokenBalance && exchangeETHBalance

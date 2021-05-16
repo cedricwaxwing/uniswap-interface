@@ -1,4 +1,3 @@
-import { ChainId, Currency } from '@uniswap/sdk'
 import React, { useContext } from 'react'
 import styled, { ThemeContext } from 'styled-components'
 import Modal from '../Modal'
@@ -14,6 +13,8 @@ import MetaMaskLogo from '../../assets/images/metamask.png'
 import { getEtherscanLink } from '../../utils'
 import { useActiveWeb3React } from '../../hooks'
 import useAddTokenToMetamask from 'hooks/useAddTokenToMetamask'
+import { W3ChainId, W3Token } from '../../web3api/types'
+import { mapChainId, reverseMapChainId, reverseMapToken } from '../../web3api/mapping'
 
 const Wrapper = styled.div`
   width: 100%;
@@ -75,14 +76,14 @@ function TransactionSubmittedContent({
 }: {
   onDismiss: () => void
   hash: string | undefined
-  chainId: ChainId
-  currencyToAdd?: Currency | undefined
+  chainId: W3ChainId
+  currencyToAdd?: W3Token | undefined
 }) {
   const theme = useContext(ThemeContext)
 
   const { library } = useActiveWeb3React()
 
-  const { addToken, success } = useAddTokenToMetamask(currencyToAdd)
+  const { addToken, success } = useAddTokenToMetamask(reverseMapToken(currencyToAdd))
 
   return (
     <Wrapper>
@@ -99,7 +100,7 @@ function TransactionSubmittedContent({
             Transaction Submitted
           </Text>
           {chainId && hash && (
-            <ExternalLink href={getEtherscanLink(chainId, hash, 'transaction')}>
+            <ExternalLink href={getEtherscanLink(reverseMapChainId(chainId), hash, 'transaction')}>
               <Text fontWeight={500} fontSize={14} color={theme.primary1}>
                 View on Etherscan
               </Text>
@@ -109,11 +110,11 @@ function TransactionSubmittedContent({
             <ButtonLight mt="12px" padding="6px 12px" width="fit-content" onClick={addToken}>
               {!success ? (
                 <RowFixed>
-                  Add {currencyToAdd.symbol} to Metamask <StyledLogo src={MetaMaskLogo} />
+                  Add {currencyToAdd.currency.symbol} to Metamask <StyledLogo src={MetaMaskLogo} />
                 </RowFixed>
               ) : (
                 <RowFixed>
-                  Added {currencyToAdd.symbol}{' '}
+                  Added {currencyToAdd.currency.symbol}{' '}
                   <CheckCircle size={'16px'} stroke={theme.green1} style={{ marginLeft: '6px' }} />
                 </RowFixed>
               )}
@@ -189,7 +190,7 @@ interface ConfirmationModalProps {
   content: () => React.ReactNode
   attemptingTxn: boolean
   pendingText: string
-  currencyToAdd?: Currency | undefined
+  currencyToAdd?: W3Token | undefined
 }
 
 export default function TransactionConfirmationModal({
@@ -212,7 +213,7 @@ export default function TransactionConfirmationModal({
         <ConfirmationPendingContent onDismiss={onDismiss} pendingText={pendingText} />
       ) : hash ? (
         <TransactionSubmittedContent
-          chainId={chainId}
+          chainId={mapChainId(chainId)}
           hash={hash}
           onDismiss={onDismiss}
           currencyToAdd={currencyToAdd}

@@ -205,6 +205,7 @@ export const BIG_INT_ZERO = JSBI.BigInt(0)
 
 // one basis point
 export const ONE_BIPS = new Percent(JSBI.BigInt(1), JSBI.BigInt(10000))
+export const W3ONE_BIPS = new Decimal(1).div(10000)
 export const BIPS_BASE = JSBI.BigInt(10000)
 export const W3BIPS_BASE = 10000
 // used for warning states

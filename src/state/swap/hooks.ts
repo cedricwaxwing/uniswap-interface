@@ -1,11 +1,9 @@
 import useENS from '../../hooks/useENS'
-import { Version } from '../../hooks/useToggledVersion'
 import { parseUnits } from '@ethersproject/units'
-import { Currency, ETHER, Pair, Token } from '@uniswap/sdk'
+import { Pair, Token } from '@uniswap/sdk'
 import { ParsedQs } from 'qs'
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useV1Trade } from '../../data/V1'
 import { useActiveWeb3React } from '../../hooks'
 import { useCurrency } from '../../hooks/W3Tokens'
 import { useTradeExactIn, useTradeExactOut } from '../../hooks/W3Trades'
@@ -17,9 +15,9 @@ import { Field, replaceSwapState, selectCurrency, setRecipient, switchCurrencies
 import { SwapState } from './reducer'
 import { w3ComputeSlippageAdjustedAmounts } from '../../utils/prices'
 import { W3Pair, W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
-import { mapTrade, reverseMapToken, reverseMapTokenAmount } from '../../web3api/mapping'
+import { reverseMapToken } from '../../web3api/mapping'
 import Decimal from 'decimal.js-light'
-import { isEther, isToken } from '../../web3api/utils'
+import { isEther } from '../../web3api/utils'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
@@ -37,7 +35,8 @@ export function useSwapActionHandlers(): {
       dispatch(
         selectCurrency({
           field,
-          currencyId: isToken(currency) && !isEther(currency) ? currency.address : isEther(currency) ? 'ETH' : ''
+          currencyId:
+            currency.address !== undefined && !isEther(currency) ? currency.address : isEther(currency) ? 'ETH' : ''
         })
       )
     },
@@ -102,7 +101,7 @@ const BAD_RECIPIENT_ADDRESSES: string[] = [
  * @param trade to check for the given address
  * @param checksummedAddress address to check in the pairs and tokens
  */
-// TODO add liquidity token to pair
+// TODO add liquidity token to pair?
 function involvesAddress(trade: W3Trade, checksummedAddress: string): boolean {
   const getAddress = (pair: W3Pair) => {
     return Pair.getAddress(
@@ -123,7 +122,6 @@ export function useBestTrade(): {
   currencyBalances: { [field in Field]?: W3TokenAmount }
   parsedAmount: W3TokenAmount | undefined
   v2TradeAsync: Promise<W3Trade | null>
-  v1Trade: W3Trade | undefined
 } {
   const { account } = useActiveWeb3React()
 
@@ -160,26 +158,11 @@ export function useBestTrade(): {
     [Field.OUTPUT]: outputCurrency ?? undefined
   }
 
-  // TODO: replace sdk in V1Trade functions
-  // get link to trade on v1, if a better rate exists
-  let uniInputCurrency: Currency | undefined = undefined
-  if (inputCurrency) {
-    uniInputCurrency = isEther(inputCurrency) ? ETHER : reverseMapToken(inputCurrency)
-  }
-  let uniOutputCurrency: Currency | undefined = undefined
-  if (outputCurrency) {
-    uniOutputCurrency = isEther(outputCurrency) ? ETHER : reverseMapToken(outputCurrency)
-  }
-  const v1Trade: W3Trade | undefined = mapTrade(
-    useV1Trade(isExactIn, uniInputCurrency, uniOutputCurrency, reverseMapTokenAmount(parsedAmount))
-  )
-
   return {
     currencies,
     currencyBalances,
     parsedAmount,
-    v2TradeAsync: v2Trade,
-    v1Trade
+    v2TradeAsync: v2Trade
   }
 }
 
@@ -228,28 +211,17 @@ export function useValidateSwapInput(
 export async function validateSwapBalance(
   currencyBalances: { [field in Field]?: W3TokenAmount },
   v2Trade: W3Trade | undefined,
-  v1Trade: W3Trade | undefined,
-  allowedSlippage: number,
-  toggledVersion: Version
+  allowedSlippage: number
 ): Promise<string | undefined> {
   let inputError: string | undefined
 
   const slippageAdjustedAmounts =
     v2Trade && allowedSlippage && (await w3ComputeSlippageAdjustedAmounts(v2Trade, allowedSlippage))
 
-  const slippageAdjustedAmountsV1 =
-    v1Trade && allowedSlippage && (await w3ComputeSlippageAdjustedAmounts(v1Trade, allowedSlippage))
-
   // compare input balance to max input based on version
   const [balanceIn, amountIn] = [
     currencyBalances[Field.INPUT],
-    toggledVersion === Version.v1
-      ? slippageAdjustedAmountsV1
-        ? slippageAdjustedAmountsV1[Field.INPUT]
-        : null
-      : slippageAdjustedAmounts
-      ? slippageAdjustedAmounts[Field.INPUT]
-      : null
+    slippageAdjustedAmounts ? slippageAdjustedAmounts[Field.INPUT] : null
   ]
 
   if (balanceIn && amountIn && new Decimal(balanceIn.amount).lessThan(new Decimal(amountIn.amount))) {

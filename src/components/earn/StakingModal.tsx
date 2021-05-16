@@ -77,7 +77,7 @@ export default function StakingModal({ isOpen, onDismiss, stakingInfo, userLiqui
   // approval data for stake
   const deadline = useTransactionDeadline()
   const [signatureData, setSignatureData] = useState<{ v: number; r: string; s: string; deadline: number } | null>(null)
-  const [approval, approveCallback] = useApproveCallback(parsedAmount, stakingInfo.stakingRewardAddress)
+  const [approval, approveCallback] = useApproveCallback(mapTokenAmount(parsedAmount), stakingInfo.stakingRewardAddress)
 
   const isArgentWallet = useIsArgentWallet()
   const stakingContract = useStakingContract(stakingInfo.stakingRewardAddress)

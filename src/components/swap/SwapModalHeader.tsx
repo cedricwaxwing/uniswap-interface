@@ -1,5 +1,4 @@
-import { Trade, TradeType } from '@uniswap/sdk'
-import React, { useContext, useMemo } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { ArrowDown, AlertTriangle } from 'react-feather'
 import { Text } from 'rebass'
 import { ThemeContext } from 'styled-components'
@@ -7,11 +6,15 @@ import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
 import { ButtonPrimary } from '../Button'
 import { isAddress, shortenAddress } from '../../utils'
-import { computeSlippageAdjustedAmounts, computeTradePriceBreakdown, warningSeverity } from '../../utils/prices'
+import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown, w3warningSeverity } from '../../utils/prices'
 import { AutoColumn } from '../Column'
 import CurrencyLogo from '../CurrencyLogo'
 import { RowBetween, RowFixed } from '../Row'
 import { TruncatedText, SwapShowAcceptChanges } from './styleds'
+import { W3TokenAmount, W3Trade, W3TradeType } from '../../web3api/types'
+import Decimal from 'decimal.js'
+import { reverseMapToken } from '../../web3api/mapping'
+import { toSignificant } from '../../web3api/utils'
 
 export default function SwapModalHeader({
   trade,
@@ -20,18 +23,32 @@ export default function SwapModalHeader({
   showAcceptChanges,
   onAcceptChanges
 }: {
-  trade: Trade
+  trade: W3Trade
   allowedSlippage: number
   recipient: string | null
   showAcceptChanges: boolean
   onAcceptChanges: () => void
 }) {
-  const slippageAdjustedAmounts = useMemo(() => computeSlippageAdjustedAmounts(trade, allowedSlippage), [
-    trade,
-    allowedSlippage
-  ])
-  const { priceImpactWithoutFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
-  const priceImpactSeverity = warningSeverity(priceImpactWithoutFee)
+  const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
+    { [field in Field]?: W3TokenAmount } | undefined
+  >(undefined)
+  useEffect(() => {
+    if (trade) {
+      w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage).then(amounts => setSlippageAdjustedAmounts(amounts))
+    } else {
+      setSlippageAdjustedAmounts(undefined)
+    }
+  }, [trade, allowedSlippage])
+
+  const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
+  useEffect(() => {
+    w3computeTradePriceBreakdown(trade).then(breakdown => {
+      const { priceImpactWithoutFee } = breakdown
+      setPriceImpactWithoutFee(priceImpactWithoutFee)
+    })
+  }, [trade])
+
+  const priceImpactSeverity = w3warningSeverity(priceImpactWithoutFee)
 
   const theme = useContext(ThemeContext)
 
@@ -39,18 +56,22 @@ export default function SwapModalHeader({
     <AutoColumn gap={'md'} style={{ marginTop: '20px' }}>
       <RowBetween align="flex-end">
         <RowFixed gap={'0px'}>
-          <CurrencyLogo currency={trade.inputAmount.currency} size={'24px'} style={{ marginRight: '12px' }} />
+          <CurrencyLogo
+            currency={reverseMapToken(trade.inputAmount.token)}
+            size={'24px'}
+            style={{ marginRight: '12px' }}
+          />
           <TruncatedText
             fontSize={24}
             fontWeight={500}
-            color={showAcceptChanges && trade.tradeType === TradeType.EXACT_OUTPUT ? theme.primary1 : ''}
+            color={showAcceptChanges && trade.tradeType === W3TradeType.EXACT_OUTPUT ? theme.primary1 : ''}
           >
-            {trade.inputAmount.toSignificant(6)}
+            {toSignificant(trade.inputAmount, 6)}
           </TruncatedText>
         </RowFixed>
         <RowFixed gap={'0px'}>
           <Text fontSize={24} fontWeight={500} style={{ marginLeft: '10px' }}>
-            {trade.inputAmount.currency.symbol}
+            {trade.inputAmount.token.currency.symbol}
           </Text>
         </RowFixed>
       </RowBetween>
@@ -59,24 +80,28 @@ export default function SwapModalHeader({
       </RowFixed>
       <RowBetween align="flex-end">
         <RowFixed gap={'0px'}>
-          <CurrencyLogo currency={trade.outputAmount.currency} size={'24px'} style={{ marginRight: '12px' }} />
+          <CurrencyLogo
+            currency={reverseMapToken(trade.outputAmount.token)}
+            size={'24px'}
+            style={{ marginRight: '12px' }}
+          />
           <TruncatedText
             fontSize={24}
             fontWeight={500}
             color={
               priceImpactSeverity > 2
                 ? theme.red1
-                : showAcceptChanges && trade.tradeType === TradeType.EXACT_INPUT
+                : showAcceptChanges && trade.tradeType === W3TradeType.EXACT_INPUT
                 ? theme.primary1
                 : ''
             }
           >
-            {trade.outputAmount.toSignificant(6)}
+            {toSignificant(trade.outputAmount, 6)}
           </TruncatedText>
         </RowFixed>
         <RowFixed gap={'0px'}>
           <Text fontSize={24} fontWeight={500} style={{ marginLeft: '10px' }}>
-            {trade.outputAmount.currency.symbol}
+            {trade.outputAmount.token.currency.symbol}
           </Text>
         </RowFixed>
       </RowBetween>
@@ -97,11 +122,11 @@ export default function SwapModalHeader({
         </SwapShowAcceptChanges>
       ) : null}
       <AutoColumn justify="flex-start" gap="sm" style={{ padding: '12px 0 0 0px' }}>
-        {trade.tradeType === TradeType.EXACT_INPUT ? (
+        {trade.tradeType === W3TradeType.EXACT_INPUT ? (
           <TYPE.italic textAlign="left" style={{ width: '100%' }}>
             {`Output is estimated. You will receive at least `}
             <b>
-              {slippageAdjustedAmounts[Field.OUTPUT]?.toSignificant(6)} {trade.outputAmount.currency.symbol}
+              {toSignificant(slippageAdjustedAmounts?.[Field.OUTPUT], 6)} {trade.outputAmount.token.currency.symbol}
             </b>
             {' or the transaction will revert.'}
           </TYPE.italic>
@@ -109,7 +134,7 @@ export default function SwapModalHeader({
           <TYPE.italic textAlign="left" style={{ width: '100%' }}>
             {`Input is estimated. You will sell at most `}
             <b>
-              {slippageAdjustedAmounts[Field.INPUT]?.toSignificant(6)} {trade.inputAmount.currency.symbol}
+              {toSignificant(slippageAdjustedAmounts?.[Field.INPUT], 6)} {trade.inputAmount.token.currency.symbol}
             </b>
             {' or the transaction will revert.'}
           </TYPE.italic>

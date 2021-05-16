@@ -40,7 +40,7 @@ import { currencyId } from '../../utils/currencyId'
 import { PoolPriceBar } from './PoolPriceBar'
 import { useIsTransactionUnsupported } from 'hooks/Trades'
 import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter'
-import { mapTokenAmount, reverseMapTokenAmount } from '../../web3api/mapping'
+import { mapToken, mapTokenAmount, reverseMapTokenAmount } from '../../web3api/mapping'
 
 export default function AddLiquidity({
   match: {
@@ -121,8 +121,14 @@ export default function AddLiquidity({
   )
 
   // check whether the user has approved the router on the tokens
-  const [approvalA, approveACallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_A], ROUTER_ADDRESS)
-  const [approvalB, approveBCallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_B], ROUTER_ADDRESS)
+  const [approvalA, approveACallback] = useApproveCallback(
+    mapTokenAmount(parsedAmounts[Field.CURRENCY_A]),
+    ROUTER_ADDRESS
+  )
+  const [approvalB, approveBCallback] = useApproveCallback(
+    mapTokenAmount(parsedAmounts[Field.CURRENCY_B]),
+    ROUTER_ADDRESS
+  )
 
   const addTransaction = useTransactionAdder()
 
@@ -329,7 +335,7 @@ export default function AddLiquidity({
               />
             )}
             pendingText={pendingText}
-            currencyToAdd={pair?.liquidityToken}
+            currencyToAdd={pair?.liquidityToken ? mapToken(pair?.liquidityToken) : undefined}
           />
           <AutoColumn gap="20px">
             {noLiquidity ||
@@ -476,7 +482,10 @@ export default function AddLiquidity({
       ) : (
         <UnsupportedCurrencyFooter
           show={addIsUnsupported}
-          currencies={[currencies.CURRENCY_A, currencies.CURRENCY_B]}
+          currencies={[
+            currencies.CURRENCY_A ? mapToken(currencies.CURRENCY_A) : undefined,
+            currencies.CURRENCY_B ? mapToken(currencies.CURRENCY_B) : undefined
+          ]}
         />
       )}
     </>

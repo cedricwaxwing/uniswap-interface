@@ -13,7 +13,7 @@ import CurrencyInputPanel from '../../components/CurrencyInputPanel'
 import { SwapPoolTabs } from '../../components/NavigationTabs'
 import { AutoRow, RowBetween } from '../../components/Row'
 import AdvancedSwapDetailsDropdown from '../../components/swap/AdvancedSwapDetailsDropdown'
-import BetterTradeLink, { DefaultVersionLink } from '../../components/swap/BetterTradeLink'
+import { DefaultVersionLink } from '../../components/swap/BetterTradeLink'
 import confirmPriceImpactWithoutFee from '../../components/swap/confirmPriceImpactWithoutFee'
 import { ArrowWrapper, BottomGrouping, SwapCallbackError, Wrapper } from '../../components/swap/styleds'
 import TradePrice from '../../components/swap/TradePrice'
@@ -27,7 +27,7 @@ import { useAllTokens, useCurrency } from '../../hooks/W3Tokens'
 import { ApprovalState, useApproveCallbackFromTrade } from '../../hooks/useApproveCallback'
 import useENSAddress from '../../hooks/useENSAddress'
 import { useSwapCallback } from '../../hooks/useSwapCallback'
-import useToggledVersion, { DEFAULT_VERSION, Version } from '../../hooks/useToggledVersion'
+import useToggledVersion, { DEFAULT_VERSION } from '../../hooks/useToggledVersion'
 import useWrapCallback, { WrapType } from '../../hooks/useWrapCallback'
 import { useToggleSettingsMenu, useWalletModalToggle } from '../../state/application/hooks'
 import { Field } from '../../state/swap/actions'
@@ -48,12 +48,12 @@ import { ClickableText } from '../Pool/styleds'
 import Loader from '../../components/Loader'
 import { useIsTransactionUnsupported } from 'hooks/W3Trades'
 import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter'
-import { w3IsTradeBetter } from 'utils/trades'
 import { RouteComponentProps } from 'react-router-dom'
 import { W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
-import { mapToken, reverseMapToken, reverseMapTrade } from '../../web3api/mapping'
+import { mapToken, reverseMapToken } from '../../web3api/mapping'
 import { isEther, isToken, toExact, toSignificant } from '../../web3api/utils'
 import { Currency } from '@uniswap/sdk'
+import { w3TradeExecutionPrice } from '../../web3api/tradeWrappers'
 
 export default function Swap({ history }: RouteComponentProps) {
   const loadedUrlParams = useDefaultsFromURLSearch()
@@ -99,7 +99,7 @@ export default function Swap({ history }: RouteComponentProps) {
 
   // get best trade (formerly part of useDerivedSwapInfo)
   const [v2Trade, setV2Trade] = useState<W3Trade | undefined>(undefined)
-  const { currencies, currencyBalances, parsedAmount, v2TradeAsync, v1Trade } = useBestTrade()
+  const { currencies, currencyBalances, parsedAmount, v2TradeAsync } = useBestTrade()
   useEffect(() => {
     v2TradeAsync.then(v2TradeQuery => {
       if (v2TradeQuery) {
@@ -108,13 +108,13 @@ export default function Swap({ history }: RouteComponentProps) {
         setV2Trade(undefined)
       }
     })
-  }, [currencies, currencyBalances, parsedAmount, v2TradeAsync, v1Trade])
+  }, [currencies, currencyBalances, parsedAmount, v2TradeAsync])
 
   // validate swap inputs (formerly part of useDerivedSwapInfo)
   const [swapInputError, setSwapInputError] = useState<string | undefined>(undefined)
   const inputError = useValidateSwapInput(currencies, currencyBalances, parsedAmount, v2Trade)
   useEffect(() => {
-    validateSwapBalance(currencyBalances, v2Trade, v1Trade, allowedSlippage, toggledVersion).then(balanceError => {
+    validateSwapBalance(currencyBalances, v2Trade, allowedSlippage).then(balanceError => {
       if (balanceError) {
         setSwapInputError(balanceError)
       } else if (inputError) {
@@ -123,7 +123,7 @@ export default function Swap({ history }: RouteComponentProps) {
         setSwapInputError(undefined)
       }
     })
-  }, [inputError, currencyBalances, v2Trade, v1Trade, allowedSlippage, toggledVersion])
+  }, [inputError, currencyBalances, v2Trade, allowedSlippage])
 
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
     currencies[Field.INPUT],
@@ -133,19 +133,8 @@ export default function Swap({ history }: RouteComponentProps) {
   const showWrap: boolean = wrapType !== WrapType.NOT_APPLICABLE
   const { address: recipientAddress } = useENSAddress(recipient)
 
-  const tradesByVersion = {
-    [Version.v1]: v1Trade,
-    [Version.v2]: v2Trade
-  }
-  const trade = showWrap ? undefined : tradesByVersion[toggledVersion]
-  const defaultTrade = showWrap ? undefined : tradesByVersion[DEFAULT_VERSION]
-
-  const [betterTradeLinkV2, setBetterTradeLinkV2] = useState<Version | undefined>(undefined)
-  useEffect(() => {
-    w3IsTradeBetter(v1Trade, v2Trade).then(isV2Better => {
-      setBetterTradeLinkV2(toggledVersion === Version.v1 && isV2Better ? Version.v2 : undefined)
-    })
-  }, [v1Trade, v2Trade, toggledVersion])
+  const trade = showWrap ? undefined : v2Trade
+  const defaultTrade = showWrap ? undefined : v2Trade
 
   const parsedAmounts = showWrap
     ? {
@@ -210,7 +199,6 @@ export default function Swap({ history }: RouteComponentProps) {
   )
   const noRoute = !route
 
-  // TODO
   // check whether the user has approved the router on the input token
   const [amountToApprove, setAmountToApprove] = useState<W3TokenAmount | undefined>(undefined)
   useEffect(() => {
@@ -220,7 +208,7 @@ export default function Swap({ history }: RouteComponentProps) {
       setAmountToApprove(undefined)
     }
   }, [trade, allowedSlippage])
-  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, amountToApprove, toggledVersion)
+  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, amountToApprove)
 
   // check if user has gone through approval process, used to show two step buttons, reset on token change
   const [approvalSubmitted, setApprovalSubmitted] = useState<boolean>(false)
@@ -238,12 +226,7 @@ export default function Swap({ history }: RouteComponentProps) {
   )
 
   // the callback to execute the swap
-  const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(
-    trade,
-    allowedSlippage,
-    recipient,
-    toggledVersion
-  )
+  const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(trade, allowedSlippage, recipient)
 
   const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
   useEffect(() => {
@@ -354,6 +337,13 @@ export default function Swap({ history }: RouteComponentProps) {
 
   const swapIsUnsupported = useIsTransactionUnsupported(currencies?.INPUT, currencies?.OUTPUT)
 
+  const [tradeExecutionPrice, setTradeExecutionPrice] = useState<Decimal | undefined>(undefined)
+  useEffect(() => {
+    if (trade) {
+      w3TradeExecutionPrice(trade).then(price => setTradeExecutionPrice(price))
+    }
+  }, [trade])
+
   return (
     <>
       <TokenWarningModal
@@ -368,8 +358,8 @@ export default function Swap({ history }: RouteComponentProps) {
         <Wrapper id="swap-page">
           <ConfirmSwapModal
             isOpen={showConfirm}
-            trade={trade ? reverseMapTrade(trade) : undefined}
-            originalTrade={tradeToConfirm ? reverseMapTrade(tradeToConfirm) : undefined}
+            trade={trade}
+            originalTrade={tradeToConfirm}
             onAcceptChanges={handleAcceptChanges}
             attemptingTxn={attemptingTxn}
             txHash={txHash}
@@ -417,7 +407,7 @@ export default function Swap({ history }: RouteComponentProps) {
               label={independentField === Field.INPUT && !showWrap && trade ? 'To (estimated)' : 'To'}
               showMaxButton={false}
               currency={reverseMapToken(currencies[Field.OUTPUT])}
-              onCurrencySelect={handleOutputSelect}
+              onCurrencySelect={(currency: Currency) => handleOutputSelect(mapToken(currency))}
               otherCurrency={reverseMapToken(currencies[Field.INPUT])}
               id="swap-currency-output"
             />
@@ -445,7 +435,9 @@ export default function Swap({ history }: RouteComponentProps) {
                         Price
                       </Text>
                       <TradePrice
-                        price={(trade ? reverseMapTrade(trade) : undefined)?.executionPrice}
+                        price={tradeExecutionPrice}
+                        baseCurrency={trade?.inputAmount?.token}
+                        quoteCurrency={trade?.outputAmount?.token}
                         showInverted={showInverted}
                         setShowInverted={setShowInverted}
                       />
@@ -563,21 +555,14 @@ export default function Swap({ history }: RouteComponentProps) {
               </Column>
             )}
             {isExpertMode && swapErrorMessage ? <SwapCallbackError error={swapErrorMessage} /> : null}
-            {betterTradeLinkV2 && !swapIsUnsupported && toggledVersion === Version.v1 ? (
-              <BetterTradeLink version={betterTradeLinkV2} />
-            ) : toggledVersion !== DEFAULT_VERSION && defaultTrade ? (
-              <DefaultVersionLink />
-            ) : null}
+            {toggledVersion !== DEFAULT_VERSION && defaultTrade ? <DefaultVersionLink /> : null}
           </BottomGrouping>
         </Wrapper>
       </AppBody>
       {!swapIsUnsupported ? (
-        <AdvancedSwapDetailsDropdown trade={trade ? reverseMapTrade(trade) : undefined} />
+        <AdvancedSwapDetailsDropdown trade={trade} />
       ) : (
-        <UnsupportedCurrencyFooter
-          show={swapIsUnsupported}
-          currencies={[reverseMapToken(currencies.INPUT), reverseMapToken(currencies.OUTPUT)]}
-        />
+        <UnsupportedCurrencyFooter show={swapIsUnsupported} currencies={[currencies.INPUT, currencies.OUTPUT]} />
       )}
     </>
   )

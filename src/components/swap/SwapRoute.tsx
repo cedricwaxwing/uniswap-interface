@@ -1,12 +1,12 @@
-import { Trade } from '@uniswap/sdk'
 import React, { Fragment, memo, useContext } from 'react'
 import { ChevronRight } from 'react-feather'
 import { Flex } from 'rebass'
 import { ThemeContext } from 'styled-components'
 import { TYPE } from '../../theme'
-import { unwrappedToken } from 'utils/wrappedCurrency'
+import { unwrappedToken } from 'utils/w3WrappedCurrency'
+import { W3Trade } from '../../web3api/types'
 
-export default memo(function SwapRoute({ trade }: { trade: Trade }) {
+export default memo(function SwapRoute({ trade }: { trade: W3Trade }) {
   const theme = useContext(ThemeContext)
   return (
     <Flex flexWrap="wrap" width="100%" justifyContent="flex-end" alignItems="center">
@@ -17,7 +17,7 @@ export default memo(function SwapRoute({ trade }: { trade: Trade }) {
           <Fragment key={i}>
             <Flex alignItems="end">
               <TYPE.black fontSize={14} color={theme.text1} ml="0.125rem" mr="0.125rem">
-                {currency.symbol}
+                {currency.currency.symbol}
               </TYPE.black>
             </Flex>
             {isLastItem ? null : <ChevronRight size={12} color={theme.text2} />}

@@ -63,7 +63,7 @@ export interface W3SwapParameters {
 export interface W3TradeOptions {
   allowedSlippage: string
   recipient: string
-  unixTimestamp?: number
+  unixTimestamp: number
   ttl?: number
   deadline?: number
   feeOnTransfer?: boolean

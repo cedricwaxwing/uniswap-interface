@@ -35,7 +35,7 @@ export default function MigrateV1() {
   const addToken = useAddUserToken()
   useEffect(() => {
     if (token && !isOnSelectedList && !allTokens[token.address]) {
-      addToken(token)
+      addToken(mapToken(token))
     }
   }, [token, isOnSelectedList, addToken, allTokens])
 

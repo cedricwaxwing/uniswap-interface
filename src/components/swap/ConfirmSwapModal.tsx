@@ -1,4 +1,3 @@
-import { currencyEquals, Trade } from '@uniswap/sdk'
 import React, { useCallback, useMemo } from 'react'
 import TransactionConfirmationModal, {
   ConfirmationModalContent,
@@ -6,19 +5,22 @@ import TransactionConfirmationModal, {
 } from '../TransactionConfirmationModal'
 import SwapModalFooter from './SwapModalFooter'
 import SwapModalHeader from './SwapModalHeader'
+import { W3Trade } from '../../web3api/types'
+import { currencyEquals, toSignificant } from '../../web3api/utils'
+import Decimal from 'decimal.js'
 
 /**
  * Returns true if the trade requires a confirmation of details before we can submit it
  * @param tradeA trade A
  * @param tradeB trade B
  */
-function tradeMeaningfullyDiffers(tradeA: Trade, tradeB: Trade): boolean {
+function tradeMeaningfullyDiffers(tradeA: W3Trade, tradeB: W3Trade): boolean {
   return (
     tradeA.tradeType !== tradeB.tradeType ||
-    !currencyEquals(tradeA.inputAmount.currency, tradeB.inputAmount.currency) ||
-    !tradeA.inputAmount.equalTo(tradeB.inputAmount) ||
-    !currencyEquals(tradeA.outputAmount.currency, tradeB.outputAmount.currency) ||
-    !tradeA.outputAmount.equalTo(tradeB.outputAmount)
+    !currencyEquals(tradeA.inputAmount.token.currency, tradeB.inputAmount.token.currency) ||
+    !new Decimal(tradeA.inputAmount.amount).equals(tradeB.inputAmount.amount) ||
+    !currencyEquals(tradeA.outputAmount.token.currency, tradeB.outputAmount.token.currency) ||
+    !new Decimal(tradeA.outputAmount.amount).equals(tradeB.outputAmount.amount)
   )
 }
 
@@ -36,8 +38,8 @@ export default function ConfirmSwapModal({
   txHash
 }: {
   isOpen: boolean
-  trade: Trade | undefined
-  originalTrade: Trade | undefined
+  trade: W3Trade | undefined
+  originalTrade: W3Trade | undefined
   attemptingTxn: boolean
   txHash: string | undefined
   recipient: string | null
@@ -77,9 +79,9 @@ export default function ConfirmSwapModal({
   }, [allowedSlippage, onConfirm, showAcceptChanges, swapErrorMessage, trade])
 
   // text to show while loading
-  const pendingText = `Swapping ${trade?.inputAmount?.toSignificant(6)} ${
-    trade?.inputAmount?.currency?.symbol
-  } for ${trade?.outputAmount?.toSignificant(6)} ${trade?.outputAmount?.currency?.symbol}`
+  const pendingText = `Swapping ${toSignificant(trade?.inputAmount, 6)} ${
+    trade?.inputAmount?.token?.currency?.symbol
+  } for ${toSignificant(trade?.outputAmount, 6)} ${trade?.outputAmount?.token?.currency?.symbol}`
 
   const confirmationContent = useCallback(
     () =>
@@ -104,7 +106,7 @@ export default function ConfirmSwapModal({
       hash={txHash}
       content={confirmationContent}
       pendingText={pendingText}
-      currencyToAdd={trade?.outputAmount.currency}
+      currencyToAdd={trade?.outputAmount?.token}
     />
   )
 }

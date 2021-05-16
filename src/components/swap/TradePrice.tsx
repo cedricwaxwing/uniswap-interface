@@ -1,26 +1,42 @@
+import Decimal from 'decimal.js'
 import React from 'react'
-import { Price } from '@uniswap/sdk'
 import { useContext } from 'react'
 import { Repeat } from 'react-feather'
 import { Text } from 'rebass'
 import { ThemeContext } from 'styled-components'
 import { StyledBalanceMaxMini } from './styleds'
+import { W3Token } from '../../web3api/types'
 
 interface TradePriceProps {
-  price?: Price
+  price?: Decimal
+  baseCurrency?: W3Token
+  quoteCurrency?: W3Token
   showInverted: boolean
   setShowInverted: (showInverted: boolean) => void
 }
 
-export default function TradePrice({ price, showInverted, setShowInverted }: TradePriceProps) {
+export default function TradePrice({
+  price,
+  baseCurrency,
+  quoteCurrency,
+  showInverted,
+  setShowInverted
+}: TradePriceProps) {
   const theme = useContext(ThemeContext)
 
-  const formattedPrice = showInverted ? price?.toSignificant(6) : price?.invert()?.toSignificant(6)
+  const formattedPrice = showInverted
+    ? price?.toSignificantDigits(6).toString()
+    : price
+    ? new Decimal(1)
+        .div(price)
+        .toSignificantDigits(6)
+        .toString()
+    : undefined
 
-  const show = Boolean(price?.baseCurrency && price?.quoteCurrency)
+  const show = Boolean(baseCurrency && quoteCurrency)
   const label = showInverted
-    ? `${price?.quoteCurrency?.symbol} per ${price?.baseCurrency?.symbol}`
-    : `${price?.baseCurrency?.symbol} per ${price?.quoteCurrency?.symbol}`
+    ? `${quoteCurrency?.currency.symbol} per ${baseCurrency?.currency.symbol}`
+    : `${baseCurrency?.currency.symbol} per ${quoteCurrency?.currency.symbol}`
 
   return (
     <Text

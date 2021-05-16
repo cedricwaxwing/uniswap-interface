@@ -10,9 +10,9 @@ import { useSingleContractMultipleData, useMultipleContractSingleData } from '..
 import { useUserUnclaimedAmount } from '../claim/hooks'
 import { useTotalUniEarned } from '../stake/hooks'
 import { W3Token, W3TokenAmount } from '../../web3api/types'
-import { ETHER as W3ETHER } from '../../web3api/constants'
+import { ETHER } from '../../web3api/constants'
 import { isEther, isToken } from '../../web3api/utils'
-import { mapToken, mapTokenAmount } from '../../web3api/mapping'
+import { mapChainId, mapToken, mapTokenAmount } from '../../web3api/mapping'
 import Decimal from 'decimal.js'
 
 /**
@@ -40,6 +40,8 @@ export function useETHBalances(
     addresses.map(address => [address])
   )
 
+  const { chainId } = useActiveWeb3React()
+
   return useMemo(
     () =>
       addresses.reduce<{ [address: string]: W3TokenAmount }>((memo, address, i) => {
@@ -47,15 +49,15 @@ export function useETHBalances(
         if (value)
           memo[address] = {
             token: {
-              chainId: undefined,
+              chainId: chainId ? mapChainId(chainId) : undefined,
               address: '',
-              currency: W3ETHER
+              currency: ETHER
             },
             amount: value.toString()
           }
         return memo
       }, {}),
-    [addresses, results]
+    [addresses, results, chainId]
   )
 }
 
@@ -67,7 +69,11 @@ export function useTokenBalancesWithLoadingIndicator(
   tokens?: (W3Token | undefined)[]
 ): [{ [tokenAddress: string]: W3TokenAmount | undefined }, boolean] {
   const validatedTokens: W3Token[] = useMemo(
-    () => tokens?.filter((t?: W3Token): t is W3Token => isAddress(t?.address) !== false) ?? [],
+    () =>
+      tokens?.filter((t?: W3Token): t is W3Token => {
+        const hasAddress = isAddress(t?.address)
+        return hasAddress !== false && hasAddress !== ''
+      }) ?? [],
     [tokens]
   )
 
@@ -82,8 +88,8 @@ export function useTokenBalancesWithLoadingIndicator(
       () =>
         address && validatedTokens.length > 0
           ? validatedTokens.reduce<{ [tokenAddress: string]: W3TokenAmount | undefined }>((memo, token, i) => {
-              const value = balances?.[i]?.result?.[0]
-              const amount = value ? value.toString() : ''
+              const value = balances[i].result?.[0]
+              const amount = value ? value.toString() : undefined
               if (amount) {
                 memo[token.address] = {
                   token: token,
@@ -117,9 +123,10 @@ export function useCurrencyBalances(
   account?: string,
   currencies?: (W3Token | undefined)[]
 ): (W3TokenAmount | undefined)[] {
-  const tokens = useMemo(() => currencies?.filter((currency): currency is W3Token => isToken(currency)) ?? [], [
-    currencies
-  ])
+  const tokens = useMemo(
+    () => currencies?.filter((currency): currency is W3Token => isToken(currency) && !isEther(currency)) ?? [],
+    [currencies]
+  )
 
   const tokenBalances = useTokenBalances(account, tokens)
   const containsETH: boolean = useMemo(() => currencies?.some(isEther) ?? false, [currencies])
@@ -169,6 +176,6 @@ export function useAggregateUniBalance(): W3TokenAmount | undefined {
     amount: new Decimal(uniBalance?.amount ?? '0')
       .add(new Decimal(w3uniUnclaimed?.amount ?? '0'))
       .add(new Decimal(w3uniUnHarvested?.amount ?? '0'))
-      .toString()
+      .toFixed(0)
   }
 }

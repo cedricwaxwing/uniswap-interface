@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { Token } from '@uniswap/sdk'
 import styled from 'styled-components'
 import { TYPE, CloseIcon } from 'theme'
 import Card from 'components/Card'
@@ -153,7 +152,7 @@ export function ImportToken({ tokens, onBack, onDismiss, handleCurrencySelect }:
           borderRadius="20px"
           padding="10px 1rem"
           onClick={() => {
-            tokens.map(token => addToken(reverseMapToken(token) as Token))
+            tokens.map(token => addToken(token))
             handleCurrencySelect && handleCurrencySelect(tokens[0])
           }}
           className=".token-dismiss-button"

@@ -19,6 +19,8 @@ import {
   toggleURLWarning,
   updateUserSingleHopOnly
 } from './actions'
+import { reverseMapToken } from '../../web3api/mapping'
+import { W3Token } from '../../web3api/types'
 
 function serializeToken(token: Token): SerializedToken {
   return {
@@ -130,11 +132,11 @@ export function useUserTransactionTTL(): [number, (slippage: number) => void] {
   return [userDeadline, setUserDeadline]
 }
 
-export function useAddUserToken(): (token: Token) => void {
+export function useAddUserToken(): (token: W3Token) => void {
   const dispatch = useDispatch<AppDispatch>()
   return useCallback(
-    (token: Token) => {
-      dispatch(addSerializedToken({ serializedToken: serializeToken(token) }))
+    (token: W3Token) => {
+      dispatch(addSerializedToken({ serializedToken: serializeToken(reverseMapToken(token) as Token) }))
     },
     [dispatch]
   )

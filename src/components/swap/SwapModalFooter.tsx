@@ -1,15 +1,14 @@
-import { Trade, TradeType } from '@uniswap/sdk'
-import React, { useContext, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Repeat } from 'react-feather'
 import { Text } from 'rebass'
 import { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
 import {
-  computeSlippageAdjustedAmounts,
-  computeTradePriceBreakdown,
-  formatExecutionPrice,
-  warningSeverity
+  w3ComputeSlippageAdjustedAmounts,
+  w3computeTradePriceBreakdown,
+  w3formatExecutionPrice,
+  w3warningSeverity
 } from '../../utils/prices'
 import { ButtonError } from '../Button'
 import { AutoColumn } from '../Column'
@@ -17,6 +16,9 @@ import QuestionHelper from '../QuestionHelper'
 import { AutoRow, RowBetween, RowFixed } from '../Row'
 import FormattedPriceImpact from './FormattedPriceImpact'
 import { StyledBalanceMaxMini, SwapCallbackError } from './styleds'
+import { W3TokenAmount, W3Trade, W3TradeType } from '../../web3api/types'
+import Decimal from 'decimal.js'
+import { toSignificant } from '../../web3api/utils'
 
 export default function SwapModalFooter({
   trade,
@@ -25,7 +27,7 @@ export default function SwapModalFooter({
   swapErrorMessage,
   disabledConfirm
 }: {
-  trade: Trade
+  trade: W3Trade
   allowedSlippage: number
   onConfirm: () => void
   swapErrorMessage: string | undefined
@@ -33,12 +35,34 @@ export default function SwapModalFooter({
 }) {
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const theme = useContext(ThemeContext)
-  const slippageAdjustedAmounts = useMemo(() => computeSlippageAdjustedAmounts(trade, allowedSlippage), [
-    allowedSlippage,
-    trade
-  ])
-  const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
-  const severity = warningSeverity(priceImpactWithoutFee)
+
+  const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
+    { [field in Field]?: W3TokenAmount } | undefined
+  >(undefined)
+  useEffect(() => {
+    if (trade) {
+      w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage).then(amounts => setSlippageAdjustedAmounts(amounts))
+    } else {
+      setSlippageAdjustedAmounts(undefined)
+    }
+  }, [trade, allowedSlippage])
+
+  const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
+  const [realizedLPFee, setRealizedLPFee] = useState<W3TokenAmount | undefined>(undefined)
+  useEffect(() => {
+    w3computeTradePriceBreakdown(trade).then(breakdown => {
+      const { priceImpactWithoutFee, realizedLPFee } = breakdown
+      setPriceImpactWithoutFee(priceImpactWithoutFee)
+      setRealizedLPFee(realizedLPFee ?? undefined)
+    })
+  }, [trade])
+
+  const severity = w3warningSeverity(priceImpactWithoutFee)
+
+  const [formattedExecutionPrice, setFormattedExecutionPrice] = useState<string>('')
+  useEffect(() => {
+    w3formatExecutionPrice(trade, showInverted).then(price => setFormattedExecutionPrice(price))
+  }, [trade, showInverted])
 
   return (
     <>
@@ -59,7 +83,7 @@ export default function SwapModalFooter({
               paddingLeft: '10px'
             }}
           >
-            {formatExecutionPrice(trade, showInverted)}
+            {formattedExecutionPrice}
             <StyledBalanceMaxMini onClick={() => setShowInverted(!showInverted)}>
               <Repeat size={14} />
             </StyledBalanceMaxMini>
@@ -69,20 +93,20 @@ export default function SwapModalFooter({
         <RowBetween>
           <RowFixed>
             <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
-              {trade.tradeType === TradeType.EXACT_INPUT ? 'Minimum received' : 'Maximum sold'}
+              {trade.tradeType === W3TradeType.EXACT_INPUT ? 'Minimum received' : 'Maximum sold'}
             </TYPE.black>
             <QuestionHelper text="Your transaction will revert if there is a large, unfavorable price movement before it is confirmed." />
           </RowFixed>
           <RowFixed>
             <TYPE.black fontSize={14}>
-              {trade.tradeType === TradeType.EXACT_INPUT
-                ? slippageAdjustedAmounts[Field.OUTPUT]?.toSignificant(4) ?? '-'
-                : slippageAdjustedAmounts[Field.INPUT]?.toSignificant(4) ?? '-'}
+              {trade.tradeType === W3TradeType.EXACT_INPUT
+                ? toSignificant(slippageAdjustedAmounts?.[Field.OUTPUT], 4) ?? '-'
+                : toSignificant(slippageAdjustedAmounts?.[Field.INPUT], 4) ?? '-'}
             </TYPE.black>
             <TYPE.black fontSize={14} marginLeft={'4px'}>
-              {trade.tradeType === TradeType.EXACT_INPUT
-                ? trade.outputAmount.currency.symbol
-                : trade.inputAmount.currency.symbol}
+              {trade.tradeType === W3TradeType.EXACT_INPUT
+                ? trade.outputAmount.token.currency.symbol
+                : trade.inputAmount.token.currency.symbol}
             </TYPE.black>
           </RowFixed>
         </RowBetween>
@@ -103,7 +127,7 @@ export default function SwapModalFooter({
             <QuestionHelper text="A portion of each trade (0.30%) goes to liquidity providers as a protocol incentive." />
           </RowFixed>
           <TYPE.black fontSize={14}>
-            {realizedLPFee ? realizedLPFee?.toSignificant(6) + ' ' + trade.inputAmount.currency.symbol : '-'}
+            {realizedLPFee ? toSignificant(realizedLPFee, 6) + ' ' + trade.inputAmount.token.currency.symbol : '-'}
           </TYPE.black>
         </RowBetween>
       </AutoColumn>
