@@ -24,11 +24,23 @@ export class Web3ApiClientManager {
         from: 'ens/ethereum.web3api.eth',
         to: ethereumPlugin({
           networks: {
-            mainnet: {
+            MAINNET: {
+              provider: ethereum
+            },
+            RINKEBY: {
+              provider: ethereum
+            },
+            ROPSTEN: {
+              provider: ethereum
+            },
+            KOVAN: {
+              provider: ethereum
+            },
+            GOERLI: {
               provider: ethereum
             }
           },
-          defaultNetwork: 'mainnet'
+          defaultNetwork: 'MAINNET'
         })
       },
       {

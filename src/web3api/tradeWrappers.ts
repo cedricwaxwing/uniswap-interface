@@ -7,7 +7,7 @@ import { Web3ApiClientManager } from './Web3ApiClientManager'
 export async function w3TradeExecutionPrice(trade: W3Trade): Promise<Decimal> {
   const client: Web3ApiClient = Web3ApiClientManager.client
   const query = await client.query<{
-    tradeExecutionPrice: W3TokenAmount
+    tradeExecutionPrice: string
   }>({
     uri: ipfsUri,
     query: `query {
@@ -19,7 +19,7 @@ export async function w3TradeExecutionPrice(trade: W3Trade): Promise<Decimal> {
       trade: trade
     }
   })
-  const result: string | undefined = query.data?.tradeExecutionPrice.amount
+  const result: string | undefined = query.data?.tradeExecutionPrice
   if (!result) {
     if (query.errors) {
       throw Error(query.errors.map(e => e.message).toString())
@@ -191,7 +191,7 @@ export async function w3SwapCallParameters(trade: W3Trade, tradeOptions: W3Trade
 export async function w3TradeSlippage(trade: W3Trade): Promise<Decimal> {
   const client: Web3ApiClient = Web3ApiClientManager.client
   const query = await client.query<{
-    tradeSlippage: W3TokenAmount
+    tradeSlippage: string
   }>({
     uri: ipfsUri,
     query: `query {
@@ -203,7 +203,7 @@ export async function w3TradeSlippage(trade: W3Trade): Promise<Decimal> {
       trade: trade
     }
   })
-  const result: string | undefined = query.data?.tradeSlippage.amount
+  const result: string | undefined = query.data?.tradeSlippage
   if (!result) {
     if (query.errors) {
       throw Error(query.errors.map(e => e.message).toString())

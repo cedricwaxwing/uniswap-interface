@@ -34,11 +34,23 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
       from: 'ens/ethereum.web3api.eth',
       to: ethereumPlugin({
         networks: {
-          mainnet: {
+          MAINNET: {
+            provider: network.provider.url
+          },
+          RINKEBY: {
+            provider: network.provider.url
+          },
+          ROPSTEN: {
+            provider: network.provider.url
+          },
+          KOVAN: {
+            provider: network.provider.url
+          },
+          GOERLI: {
             provider: network.provider.url
           }
         },
-        defaultNetwork: 'mainnet'
+        defaultNetwork: 'MAINNET'
       })
     },
     {

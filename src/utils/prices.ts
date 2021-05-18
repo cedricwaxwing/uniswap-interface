@@ -77,9 +77,8 @@ export async function w3computeTradePriceBreakdown(
       )
 
   // remove lp fees from price impact
-  // the x*y=k impact // TODO: remove the div by 100 once bug fix gets merged
-  const priceImpactWithoutFee =
-    trade && realizedLPFee ? (await w3TradeSlippage(trade)).div(100).sub(realizedLPFee) : undefined
+  // the x*y=k impact
+  const priceImpactWithoutFee = trade && realizedLPFee ? (await w3TradeSlippage(trade)).sub(realizedLPFee) : undefined
 
   // the amount of the input that accrues to LPs
   const realizedLPFeeAmount =
