@@ -40,11 +40,11 @@ import {
 import { useExpertModeManager, useUserSlippageTolerance, useUserSingleHopOnly } from '../../state/user/hooks'
 import { LinkStyledButton, TYPE } from '../../theme'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
-import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown, w3warningSeverity } from '../../utils/prices'
+import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown, warningSeverity } from '../../utils/prices'
 import AppBody from '../AppBody'
 import { ClickableText } from '../Pool/styleds'
 import Loader from '../../components/Loader'
-import { useIsTransactionUnsupported } from 'hooks/W3Trades'
+import { useIsTransactionUnsupported } from 'hooks/Trades'
 import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter'
 import { RouteComponentProps } from 'react-router-dom'
 import { W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
@@ -283,7 +283,7 @@ export default function Swap({ history }: RouteComponentProps) {
   const [showInverted, setShowInverted] = useState<boolean>(false)
 
   // warnings on slippage
-  const priceImpactSeverity = w3warningSeverity(showWrap ? undefined : priceImpactWithoutFee)
+  const priceImpactSeverity = warningSeverity(showWrap ? undefined : priceImpactWithoutFee)
 
   // show approve flow when: no error on inputs, not approved or pending, or approved in current session
   // never show if price impact is above threshold in non expert mode

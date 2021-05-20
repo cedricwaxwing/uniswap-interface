@@ -7,7 +7,7 @@ import { useTotalSupply } from '../../data/TotalSupply'
 import { useActiveWeb3React } from '../../hooks'
 import { wrappedCurrency, wrappedCurrencyAmount } from '../../utils/wrappedCurrency'
 import { AppDispatch, AppState } from '../index'
-import { tryParseAmount } from '../swap/oldHooks'
+import { tryParseAmount } from '../swap/hooks'
 import { useCurrencyBalances } from '../wallet/hooks'
 import { Field, typeInput } from './actions'
 import { mapToken, reverseMapTokenAmount } from '../../web3api/mapping'
@@ -95,12 +95,12 @@ export function useDerivedMintInfo(
 
   // amounts
   const independentAmount: CurrencyAmount | undefined = currencies[independentField]
-    ? tryParseAmount(typedValue, currencies[independentField])
+    ? reverseMapTokenAmount(tryParseAmount(typedValue, mapToken(currencies[independentField]!)))
     : undefined
   const dependentAmount: CurrencyAmount | undefined = useMemo(() => {
     if (noLiquidity) {
       if (otherTypedValue && currencies[dependentField]) {
-        return tryParseAmount(otherTypedValue, currencies[dependentField])
+        return reverseMapTokenAmount(tryParseAmount(otherTypedValue, mapToken(currencies[dependentField]!)))
       }
       return undefined
     } else if (independentAmount) {

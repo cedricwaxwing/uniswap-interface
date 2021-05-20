@@ -8,7 +8,7 @@ import {
   w3ComputeSlippageAdjustedAmounts,
   w3computeTradePriceBreakdown,
   w3formatExecutionPrice,
-  w3warningSeverity
+  warningSeverity
 } from '../../utils/prices'
 import { ButtonError } from '../Button'
 import { AutoColumn } from '../Column'
@@ -61,7 +61,7 @@ export default function SwapModalFooter({
     updateStateAsync()
   }, [trade, allowedSlippage, showInverted, client])
 
-  const severity = w3warningSeverity(priceImpactWithoutFee)
+  const severity = warningSeverity(priceImpactWithoutFee)
 
   return (
     <>

@@ -314,7 +314,10 @@ export default function AddLiquidity({
 
   const isCreate = history.location.pathname.includes('/create')
 
-  const addIsUnsupported = useIsTransactionUnsupported(currencies?.CURRENCY_A, currencies?.CURRENCY_B)
+  const addIsUnsupported = useIsTransactionUnsupported(
+    currencies?.CURRENCY_A ? mapToken(currencies.CURRENCY_A) : undefined,
+    currencies?.CURRENCY_B ? mapToken(currencies.CURRENCY_B) : undefined
+  )
 
   return (
     <>

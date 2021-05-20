@@ -6,7 +6,7 @@ import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
 import { ButtonPrimary } from '../Button'
 import { isAddress, shortenAddress } from '../../utils'
-import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown, w3warningSeverity } from '../../utils/prices'
+import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown, warningSeverity } from '../../utils/prices'
 import { AutoColumn } from '../Column'
 import CurrencyLogo from '../CurrencyLogo'
 import { RowBetween, RowFixed } from '../Row'
@@ -49,7 +49,7 @@ export default function SwapModalHeader({
     updateStateAsync()
   }, [trade, allowedSlippage, client])
 
-  const priceImpactSeverity = w3warningSeverity(priceImpactWithoutFee)
+  const priceImpactSeverity = warningSeverity(priceImpactWithoutFee)
 
   const theme = useContext(ThemeContext)
 
