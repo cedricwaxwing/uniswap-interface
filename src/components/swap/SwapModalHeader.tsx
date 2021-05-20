@@ -32,21 +32,17 @@ export default function SwapModalHeader({
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
     { [field in Field]?: W3TokenAmount } | undefined
   >(undefined)
-  useEffect(() => {
-    if (trade) {
-      w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage).then(amounts => setSlippageAdjustedAmounts(amounts))
-    } else {
-      setSlippageAdjustedAmounts(undefined)
-    }
-  }, [trade, allowedSlippage])
-
   const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
+
   useEffect(() => {
-    w3computeTradePriceBreakdown(trade).then(breakdown => {
-      const { priceImpactWithoutFee } = breakdown
+    const updateStateAsync = async () => {
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage)
+      const { priceImpactWithoutFee } = await w3computeTradePriceBreakdown(trade)
+      setSlippageAdjustedAmounts(slippageAdjustedAmounts)
       setPriceImpactWithoutFee(priceImpactWithoutFee)
-    })
-  }, [trade])
+    }
+    updateStateAsync()
+  }, [trade, allowedSlippage])
 
   const priceImpactSeverity = w3warningSeverity(priceImpactWithoutFee)
 

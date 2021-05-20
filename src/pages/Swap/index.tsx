@@ -35,9 +35,7 @@ import {
   useDefaultsFromURLSearch,
   useSwapActionHandlers,
   useSwapState,
-  useBestTrade,
-  validateSwapBalance,
-  useValidateSwapInput
+  useDerivedSwapInfo
 } from '../../state/swap/hooks'
 import { useExpertModeManager, useUserSlippageTolerance, useUserSingleHopOnly } from '../../state/user/hooks'
 import { LinkStyledButton, TYPE } from '../../theme'
@@ -97,33 +95,31 @@ export default function Swap({ history }: RouteComponentProps) {
   // swap state
   const { independentField, typedValue, recipient } = useSwapState()
 
-  // get best trade (formerly part of useDerivedSwapInfo)
+  // best trade state
   const [v2Trade, setV2Trade] = useState<W3Trade | undefined>(undefined)
-  const { currencies, currencyBalances, parsedAmount, v2TradeAsync } = useBestTrade()
-  useEffect(() => {
-    v2TradeAsync.then(v2TradeQuery => {
-      if (v2TradeQuery) {
-        setV2Trade(v2TradeQuery)
-      } else {
-        setV2Trade(undefined)
-      }
-    })
-  }, [currencies, currencyBalances, parsedAmount, v2TradeAsync])
-
-  // validate swap inputs (formerly part of useDerivedSwapInfo)
   const [swapInputError, setSwapInputError] = useState<string | undefined>(undefined)
-  const inputError = useValidateSwapInput(currencies, currencyBalances, parsedAmount, v2Trade)
+
+  // state dependent on trade and async functions
+  const [amountToApprove, setAmountToApprove] = useState<W3TokenAmount | undefined>(undefined)
+  const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
+  const [tradeExecutionPrice, setTradeExecutionPrice] = useState<Decimal | undefined>(undefined)
+
+  const { currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync } = useDerivedSwapInfo()
   useEffect(() => {
-    validateSwapBalance(currencyBalances, v2Trade, allowedSlippage).then(balanceError => {
-      if (balanceError) {
-        setSwapInputError(balanceError)
-      } else if (inputError) {
-        setSwapInputError(inputError)
-      } else {
-        setSwapInputError(undefined)
-      }
-    })
-  }, [inputError, currencyBalances, v2Trade, allowedSlippage])
+    const updateStateAsync = async () => {
+      const v2Trade = (await v2TradeAsync) ?? undefined
+      const inputError = await inputErrorAsync
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(v2Trade, allowedSlippage)
+      const { priceImpactWithoutFee } = await w3computeTradePriceBreakdown(v2Trade)
+      const tradeExecutionPrice = v2Trade ? await w3TradeExecutionPrice(v2Trade) : undefined
+      setV2Trade(v2Trade)
+      setSwapInputError(inputError)
+      setAmountToApprove(slippageAdjustedAmounts[Field.INPUT])
+      setPriceImpactWithoutFee(priceImpactWithoutFee)
+      setTradeExecutionPrice(tradeExecutionPrice)
+    }
+    updateStateAsync()
+  }, [currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync, allowedSlippage])
 
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
     currencies[Field.INPUT],
@@ -200,15 +196,7 @@ export default function Swap({ history }: RouteComponentProps) {
   const noRoute = !route
 
   // check whether the user has approved the router on the input token
-  const [amountToApprove, setAmountToApprove] = useState<W3TokenAmount | undefined>(undefined)
-  useEffect(() => {
-    if (trade) {
-      w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage).then(amounts => setAmountToApprove(amounts[Field.INPUT]))
-    } else {
-      setAmountToApprove(undefined)
-    }
-  }, [trade, allowedSlippage])
-  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, amountToApprove)
+  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, showWrap ? undefined : amountToApprove)
 
   // check if user has gone through approval process, used to show two step buttons, reset on token change
   const [approvalSubmitted, setApprovalSubmitted] = useState<boolean>(false)
@@ -228,18 +216,10 @@ export default function Swap({ history }: RouteComponentProps) {
   // the callback to execute the swap
   const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(trade, allowedSlippage, recipient)
 
-  const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
-  useEffect(() => {
-    w3computeTradePriceBreakdown(trade).then(breakdown => {
-      const { priceImpactWithoutFee } = breakdown
-      setPriceImpactWithoutFee(priceImpactWithoutFee)
-    })
-  }, [trade])
-
   const [singleHopOnly] = useUserSingleHopOnly()
 
   const handleSwap = useCallback(() => {
-    if (priceImpactWithoutFee && !confirmPriceImpactWithoutFee(priceImpactWithoutFee)) {
+    if (priceImpactWithoutFee && !showWrap && !confirmPriceImpactWithoutFee(priceImpactWithoutFee)) {
       return
     }
     if (!swapCallback) {
@@ -280,6 +260,7 @@ export default function Swap({ history }: RouteComponentProps) {
         })
       })
   }, [
+    showWrap,
     priceImpactWithoutFee,
     swapCallback,
     tradeToConfirm,
@@ -296,7 +277,7 @@ export default function Swap({ history }: RouteComponentProps) {
   const [showInverted, setShowInverted] = useState<boolean>(false)
 
   // warnings on slippage
-  const priceImpactSeverity = w3warningSeverity(priceImpactWithoutFee)
+  const priceImpactSeverity = w3warningSeverity(showWrap ? undefined : priceImpactWithoutFee)
 
   // show approve flow when: no error on inputs, not approved or pending, or approved in current session
   // never show if price impact is above threshold in non expert mode
@@ -336,13 +317,6 @@ export default function Swap({ history }: RouteComponentProps) {
   ])
 
   const swapIsUnsupported = useIsTransactionUnsupported(currencies?.INPUT, currencies?.OUTPUT)
-
-  const [tradeExecutionPrice, setTradeExecutionPrice] = useState<Decimal | undefined>(undefined)
-  useEffect(() => {
-    if (trade) {
-      w3TradeExecutionPrice(trade).then(price => setTradeExecutionPrice(price))
-    }
-  }, [trade])
 
   return (
     <>
@@ -435,7 +409,7 @@ export default function Swap({ history }: RouteComponentProps) {
                         Price
                       </Text>
                       <TradePrice
-                        price={tradeExecutionPrice}
+                        price={showWrap ? undefined : tradeExecutionPrice}
                         baseCurrency={trade?.inputAmount?.token}
                         quoteCurrency={trade?.outputAmount?.token}
                         showInverted={showInverted}

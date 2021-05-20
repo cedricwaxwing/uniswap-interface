@@ -39,30 +39,23 @@ export default function SwapModalFooter({
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
     { [field in Field]?: W3TokenAmount } | undefined
   >(undefined)
-  useEffect(() => {
-    if (trade) {
-      w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage).then(amounts => setSlippageAdjustedAmounts(amounts))
-    } else {
-      setSlippageAdjustedAmounts(undefined)
-    }
-  }, [trade, allowedSlippage])
-
   const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
   const [realizedLPFee, setRealizedLPFee] = useState<W3TokenAmount | undefined>(undefined)
-  useEffect(() => {
-    w3computeTradePriceBreakdown(trade).then(breakdown => {
-      const { priceImpactWithoutFee, realizedLPFee } = breakdown
-      setPriceImpactWithoutFee(priceImpactWithoutFee)
-      setRealizedLPFee(realizedLPFee ?? undefined)
-    })
-  }, [trade])
-
-  const severity = w3warningSeverity(priceImpactWithoutFee)
-
   const [formattedExecutionPrice, setFormattedExecutionPrice] = useState<string>('')
   useEffect(() => {
-    w3formatExecutionPrice(trade, showInverted).then(price => setFormattedExecutionPrice(price))
-  }, [trade, showInverted])
+    const updateStateAsync = async () => {
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage)
+      const { priceImpactWithoutFee, realizedLPFee } = await w3computeTradePriceBreakdown(trade)
+      const formattedExecutionPrice = await w3formatExecutionPrice(trade, showInverted)
+      setSlippageAdjustedAmounts(slippageAdjustedAmounts)
+      setPriceImpactWithoutFee(priceImpactWithoutFee)
+      setRealizedLPFee(realizedLPFee ?? undefined)
+      setFormattedExecutionPrice(formattedExecutionPrice)
+    }
+    updateStateAsync()
+  }, [trade, allowedSlippage, showInverted])
+
+  const severity = w3warningSeverity(priceImpactWithoutFee)
 
   return (
     <>
