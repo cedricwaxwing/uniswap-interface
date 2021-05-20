@@ -1,9 +1,10 @@
-import { W3_ZERO_PERCENT, W3_ONE_HUNDRED_PERCENT, ZERO_PERCENT, ONE_HUNDRED_PERCENT } from './../constants/index'
+import { W3_ZERO_PERCENT, W3_ONE_HUNDRED_PERCENT, ZERO_PERCENT, ONE_HUNDRED_PERCENT } from '../constants'
 import { Trade, Percent, currencyEquals } from '@uniswap/sdk'
 import { W3Trade } from '../web3api/types'
 import Decimal from 'decimal.js'
 import { w3TradeExecutionPrice } from '../web3api/tradeWrappers'
 import { currencyEquals as w3currencyEquals } from '../web3api/utils'
+import { Web3ApiClient } from '@web3api/client-js'
 
 // TODO: remove
 // returns whether tradeB is better than tradeA by at least a threshold percentage amount
@@ -32,6 +33,7 @@ export function isTradeBetter(
 }
 
 export async function w3IsTradeBetter(
+  client: Web3ApiClient,
   tradeA: W3Trade | undefined | null,
   tradeB: W3Trade | undefined | null,
   minimumDelta: Decimal = W3_ZERO_PERCENT
@@ -48,8 +50,8 @@ export async function w3IsTradeBetter(
     throw new Error('Trades are not comparable')
   }
 
-  const executionPriceA: Decimal = await w3TradeExecutionPrice(tradeA)
-  const executionPriceB: Decimal = await w3TradeExecutionPrice(tradeB)
+  const executionPriceA: Decimal = await w3TradeExecutionPrice(client, tradeA)
+  const executionPriceB: Decimal = await w3TradeExecutionPrice(client, tradeB)
 
   if (minimumDelta.equals(W3_ZERO_PERCENT)) {
     return executionPriceA.lessThan(executionPriceB)

@@ -15,6 +15,8 @@ import { W3TokenAmount, W3Trade, W3TradeType } from '../../web3api/types'
 import Decimal from 'decimal.js'
 import { reverseMapToken } from '../../web3api/mapping'
 import { toSignificant } from '../../web3api/utils'
+import { Web3ApiClient } from '@web3api/client-js'
+import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
 
 export default function SwapModalHeader({
   trade,
@@ -29,20 +31,23 @@ export default function SwapModalHeader({
   showAcceptChanges: boolean
   onAcceptChanges: () => void
 }) {
+  // TODO: replace with forthcoming useClient hook
+  // get web3api client
+  const client: Web3ApiClient = Web3ApiClientManager.client
+
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
     { [field in Field]?: W3TokenAmount } | undefined
   >(undefined)
   const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
-
   useEffect(() => {
     const updateStateAsync = async () => {
-      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage)
-      const { priceImpactWithoutFee } = await w3computeTradePriceBreakdown(trade)
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(client, trade, allowedSlippage)
+      const { priceImpactWithoutFee } = await w3computeTradePriceBreakdown(client, trade)
       setSlippageAdjustedAmounts(slippageAdjustedAmounts)
       setPriceImpactWithoutFee(priceImpactWithoutFee)
     }
     updateStateAsync()
-  }, [trade, allowedSlippage])
+  }, [trade, allowedSlippage, client])
 
   const priceImpactSeverity = w3warningSeverity(priceImpactWithoutFee)
 

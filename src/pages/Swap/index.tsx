@@ -52,6 +52,8 @@ import { mapToken, reverseMapToken } from '../../web3api/mapping'
 import { isEther, isToken, toExact, toSignificant } from '../../web3api/utils'
 import { Currency } from '@uniswap/sdk'
 import { w3TradeExecutionPrice } from '../../web3api/tradeWrappers'
+import { Web3ApiClient } from '@web3api/client-js'
+import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
 
 export default function Swap({ history }: RouteComponentProps) {
   const loadedUrlParams = useDefaultsFromURLSearch()
@@ -92,6 +94,10 @@ export default function Swap({ history }: RouteComponentProps) {
   const [allowedSlippage] = useUserSlippageTolerance()
   const toggledVersion = useToggledVersion()
 
+  // TODO: replace with forthcoming useClient hook
+  // get web3api client
+  const client: Web3ApiClient = Web3ApiClientManager.client
+
   // swap state
   const { independentField, typedValue, recipient } = useSwapState()
 
@@ -109,9 +115,9 @@ export default function Swap({ history }: RouteComponentProps) {
     const updateStateAsync = async () => {
       const v2Trade = (await v2TradeAsync) ?? undefined
       const inputError = await inputErrorAsync
-      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(v2Trade, allowedSlippage)
-      const { priceImpactWithoutFee } = await w3computeTradePriceBreakdown(v2Trade)
-      const tradeExecutionPrice = v2Trade ? await w3TradeExecutionPrice(v2Trade) : undefined
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(client, v2Trade, allowedSlippage)
+      const { priceImpactWithoutFee } = await w3computeTradePriceBreakdown(client, v2Trade)
+      const tradeExecutionPrice = v2Trade ? await w3TradeExecutionPrice(client, v2Trade) : undefined
       setV2Trade(v2Trade)
       setSwapInputError(inputError)
       setAmountToApprove(slippageAdjustedAmounts[Field.INPUT])
@@ -119,7 +125,7 @@ export default function Swap({ history }: RouteComponentProps) {
       setTradeExecutionPrice(tradeExecutionPrice)
     }
     updateStateAsync()
-  }, [currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync, allowedSlippage])
+  }, [currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync, allowedSlippage, client])
 
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
     currencies[Field.INPUT],

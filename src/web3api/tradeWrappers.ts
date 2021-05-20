@@ -2,10 +2,10 @@ import { W3BestTradeOptions, W3Pair, W3SwapParameters, W3Token, W3TokenAmount, W
 import { ipfsUri } from './constants'
 import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
-import { Web3ApiClientManager } from './Web3ApiClientManager'
 
-export async function w3TradeExecutionPrice(trade: W3Trade): Promise<Decimal> {
-  const client: Web3ApiClient = Web3ApiClientManager.client
+// const client: Web3ApiClient = Web3ApiClientManager.client
+
+export async function w3TradeExecutionPrice(client: Web3ApiClient, trade: W3Trade): Promise<Decimal> {
   const query = await client.query<{
     tradeExecutionPrice: string
   }>({
@@ -31,12 +31,12 @@ export async function w3TradeExecutionPrice(trade: W3Trade): Promise<Decimal> {
 }
 
 export async function w3bestTradeExactIn(
+  client: Web3ApiClient,
   allowedPairs: W3Pair[],
   currencyAmountIn: W3TokenAmount,
   currencyOut: W3Token,
   bestTradeOptions: W3BestTradeOptions
 ): Promise<W3Trade[]> {
-  const client: Web3ApiClient = Web3ApiClientManager.client
   const query = await client.query<{
     bestTradeExactIn: W3Trade[]
   }>({
@@ -68,12 +68,12 @@ export async function w3bestTradeExactIn(
 }
 
 export async function w3bestTradeExactOut(
+  client: Web3ApiClient,
   allowedPairs: W3Pair[],
   currencyIn: W3Token,
   currencyAmountOut: W3TokenAmount,
   bestTradeOptions: W3BestTradeOptions
 ): Promise<W3Trade[]> {
-  const client: Web3ApiClient = Web3ApiClientManager.client
   const query = await client.query<{
     bestTradeExactOut: W3Trade[]
   }>({
@@ -104,8 +104,11 @@ export async function w3bestTradeExactOut(
   return result
 }
 
-export async function w3TradeMaximumAmountIn(trade: W3Trade, slippageTolerance: string): Promise<W3TokenAmount> {
-  const client: Web3ApiClient = Web3ApiClientManager.client
+export async function w3TradeMaximumAmountIn(
+  client: Web3ApiClient,
+  trade: W3Trade,
+  slippageTolerance: string
+): Promise<W3TokenAmount> {
   const query = await client.query<{
     tradeMaximumAmountIn: W3TokenAmount
   }>({
@@ -132,8 +135,11 @@ export async function w3TradeMaximumAmountIn(trade: W3Trade, slippageTolerance: 
   return result
 }
 
-export async function w3TradeMinimumAmountOut(trade: W3Trade, slippageTolerance: string): Promise<W3TokenAmount> {
-  const client: Web3ApiClient = Web3ApiClientManager.client
+export async function w3TradeMinimumAmountOut(
+  client: Web3ApiClient,
+  trade: W3Trade,
+  slippageTolerance: string
+): Promise<W3TokenAmount> {
   const query = await client.query<{
     tradeMinimumAmountOut: W3TokenAmount
   }>({
@@ -160,8 +166,11 @@ export async function w3TradeMinimumAmountOut(trade: W3Trade, slippageTolerance:
   return result
 }
 
-export async function w3SwapCallParameters(trade: W3Trade, tradeOptions: W3TradeOptions): Promise<W3SwapParameters> {
-  const client: Web3ApiClient = Web3ApiClientManager.client
+export async function w3SwapCallParameters(
+  client: Web3ApiClient,
+  trade: W3Trade,
+  tradeOptions: W3TradeOptions
+): Promise<W3SwapParameters> {
   const query = await client.query<{
     swapCallParameters: W3SwapParameters
   }>({
@@ -188,8 +197,7 @@ export async function w3SwapCallParameters(trade: W3Trade, tradeOptions: W3Trade
   return result
 }
 
-export async function w3TradeSlippage(trade: W3Trade): Promise<Decimal> {
-  const client: Web3ApiClient = Web3ApiClientManager.client
+export async function w3TradeSlippage(client: Web3ApiClient, trade: W3Trade): Promise<Decimal> {
   const query = await client.query<{
     tradeSlippage: string
   }>({

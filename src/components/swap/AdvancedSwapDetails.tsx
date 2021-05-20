@@ -3,10 +3,7 @@ import styled, { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { useUserSlippageTolerance } from '../../state/user/hooks'
 import { TYPE, ExternalLink } from '../../theme'
-import {
-  w3ComputeSlippageAdjustedAmounts,
-  w3computeTradePriceBreakdown,
-} from '../../utils/prices'
+import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown } from '../../utils/prices'
 import { AutoColumn } from '../Column'
 import QuestionHelper from '../QuestionHelper'
 import { RowBetween, RowFixed } from '../Row'
@@ -16,6 +13,8 @@ import { W3TokenAmount, W3Trade, W3TradeType } from '../../web3api/types'
 import Decimal from 'decimal.js'
 import { toSignificant } from '../../web3api/utils'
 import { reverseMapPair } from '../../web3api/mapping'
+import { Web3ApiClient } from '@web3api/client-js'
+import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
 
 const InfoLink = styled(ExternalLink)`
   width: 100%;
@@ -30,6 +29,10 @@ const InfoLink = styled(ExternalLink)`
 function TradeSummary({ trade, allowedSlippage }: { trade: W3Trade; allowedSlippage: number }) {
   const theme = useContext(ThemeContext)
 
+  // TODO: replace with forthcoming useClient hook
+  // get web3api client
+  const client: Web3ApiClient = Web3ApiClientManager.client
+
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
     { [field in Field]?: W3TokenAmount } | undefined
   >(undefined)
@@ -37,14 +40,14 @@ function TradeSummary({ trade, allowedSlippage }: { trade: W3Trade; allowedSlipp
   const [realizedLPFee, setRealizedLPFee] = useState<W3TokenAmount | undefined>(undefined)
   useEffect(() => {
     const updateStateAsync = async () => {
-      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage)
-      const { priceImpactWithoutFee, realizedLPFee } = await w3computeTradePriceBreakdown(trade)
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(client, trade, allowedSlippage)
+      const { priceImpactWithoutFee, realizedLPFee } = await w3computeTradePriceBreakdown(client, trade)
       setSlippageAdjustedAmounts(slippageAdjustedAmounts)
       setPriceImpactWithoutFee(priceImpactWithoutFee)
       setRealizedLPFee(realizedLPFee ?? undefined)
     }
     updateStateAsync()
-  }, [trade, allowedSlippage])
+  }, [trade, allowedSlippage, client])
 
   const isExactIn = trade.tradeType === W3TradeType.EXACT_INPUT
 

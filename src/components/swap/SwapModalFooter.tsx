@@ -19,6 +19,8 @@ import { StyledBalanceMaxMini, SwapCallbackError } from './styleds'
 import { W3TokenAmount, W3Trade, W3TradeType } from '../../web3api/types'
 import Decimal from 'decimal.js'
 import { toSignificant } from '../../web3api/utils'
+import { Web3ApiClient } from '@web3api/client-js'
+import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
 
 export default function SwapModalFooter({
   trade,
@@ -36,6 +38,10 @@ export default function SwapModalFooter({
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const theme = useContext(ThemeContext)
 
+  // TODO: replace with forthcoming useClient hook
+  // get web3api client
+  const client: Web3ApiClient = Web3ApiClientManager.client
+
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
     { [field in Field]?: W3TokenAmount } | undefined
   >(undefined)
@@ -44,16 +50,16 @@ export default function SwapModalFooter({
   const [formattedExecutionPrice, setFormattedExecutionPrice] = useState<string>('')
   useEffect(() => {
     const updateStateAsync = async () => {
-      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage)
-      const { priceImpactWithoutFee, realizedLPFee } = await w3computeTradePriceBreakdown(trade)
-      const formattedExecutionPrice = await w3formatExecutionPrice(trade, showInverted)
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(client, trade, allowedSlippage)
+      const { priceImpactWithoutFee, realizedLPFee } = await w3computeTradePriceBreakdown(client, trade)
+      const formattedExecutionPrice = await w3formatExecutionPrice(client, trade, showInverted)
       setSlippageAdjustedAmounts(slippageAdjustedAmounts)
       setPriceImpactWithoutFee(priceImpactWithoutFee)
       setRealizedLPFee(realizedLPFee ?? undefined)
       setFormattedExecutionPrice(formattedExecutionPrice)
     }
     updateStateAsync()
-  }, [trade, allowedSlippage, showInverted])
+  }, [trade, allowedSlippage, showInverted, client])
 
   const severity = w3warningSeverity(priceImpactWithoutFee)
 

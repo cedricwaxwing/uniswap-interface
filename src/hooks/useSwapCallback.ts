@@ -12,6 +12,8 @@ import { W3SwapParameters, W3Trade, W3TradeType } from '../web3api/types'
 import { w3SwapCallParameters } from '../web3api/tradeWrappers'
 import Decimal from 'decimal.js'
 import { toSignificant } from '../web3api/utils'
+import { Web3ApiClient } from '@web3api/client-js'
+import { Web3ApiClientManager } from '../web3api/Web3ApiClientManager'
 
 export enum SwapCallbackState {
   INVALID,
@@ -58,6 +60,10 @@ function useSwapCallArguments(
   const recipient = recipientAddressOrName === null ? account : recipientAddress
   const deadline = useTransactionDeadline()
 
+  // TODO: replace with forthcoming useClient hook
+  // get web3api client
+  const client: Web3ApiClient = Web3ApiClientManager.client
+
   return useMemo(() => {
     if (!trade || !recipient || !library || !account || !chainId || !deadline) return []
 
@@ -69,7 +75,7 @@ function useSwapCallArguments(
     const swapMethods = []
 
     swapMethods.push(
-      w3SwapCallParameters(trade, {
+      w3SwapCallParameters(client, trade, {
         feeOnTransfer: false,
         allowedSlippage: new Decimal(allowedSlippage).div(W3BIPS_BASE).toString(),
         recipient,
@@ -80,7 +86,7 @@ function useSwapCallArguments(
 
     if (trade.tradeType === W3TradeType.EXACT_INPUT) {
       swapMethods.push(
-        w3SwapCallParameters(trade, {
+        w3SwapCallParameters(client, trade, {
           feeOnTransfer: true,
           allowedSlippage: new Decimal(allowedSlippage).div(W3BIPS_BASE).toString(),
           recipient,
@@ -90,7 +96,7 @@ function useSwapCallArguments(
       )
     }
     return swapMethods.map(parameters => ({ parameters, contract }))
-  }, [account, allowedSlippage, chainId, deadline, library, recipient, trade])
+  }, [account, allowedSlippage, chainId, deadline, library, recipient, trade, client])
 }
 
 // returns a function that will execute a swap, if the parameters are all valid

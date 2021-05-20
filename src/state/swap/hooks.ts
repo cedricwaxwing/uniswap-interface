@@ -19,6 +19,8 @@ import Decimal from 'decimal.js-light'
 import { isEther } from '../../web3api/utils'
 import useENS from '../../hooks/useENS'
 import { useUserSlippageTolerance } from '../user/hooks'
+import { Web3ApiClient } from '@web3api/client-js'
+import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
@@ -119,6 +121,7 @@ function involvesAddress(trade: W3Trade, checksummedAddress: string): boolean {
 // check swap inputs for errors
 // formerly part of useDerivedSwapInfo()
 export async function validateSwapInput(
+  client: Web3ApiClient,
   currencies: { [field in Field]?: W3Token },
   currencyBalances: { [field in Field]?: W3TokenAmount },
   parsedAmount: W3TokenAmount | undefined,
@@ -152,7 +155,7 @@ export async function validateSwapInput(
   }
 
   const slippageAdjustedAmounts =
-    v2Trade && allowedSlippage && (await w3ComputeSlippageAdjustedAmounts(v2Trade, allowedSlippage))
+    v2Trade && allowedSlippage && (await w3ComputeSlippageAdjustedAmounts(client, v2Trade, allowedSlippage))
 
   // compare input balance to max input based on version
   const [balanceIn, amountIn] = [
@@ -211,10 +214,16 @@ export function useDerivedSwapInfo(): {
     [Field.OUTPUT]: outputCurrency ?? undefined
   }
 
+  // TODO: replace with forthcoming useClient hook
+  // get web3api client
+  const client: Web3ApiClient = Web3ApiClientManager.client
+  // get info needed for input validation
   const recipientLookup = useENS(recipient ?? undefined)
   const to: string | null = (recipient === null ? account : recipientLookup.address) ?? null
   const [allowedSlippage] = useUserSlippageTolerance()
+  // validate input
   const inputErrorAsync = validateSwapInput(
+    client,
     currencies,
     currencyBalances,
     parsedAmount,

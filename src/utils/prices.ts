@@ -19,6 +19,7 @@ import {
 import Decimal from 'decimal.js'
 import { isEther } from '../web3api/utils'
 import { ETHER } from '../web3api/constants'
+import { Web3ApiClient } from '@web3api/client-js'
 
 const BASE_FEE = new Percent(JSBI.BigInt(30), JSBI.BigInt(10000))
 const ONE_HUNDRED_PERCENT = new Percent(JSBI.BigInt(10000), JSBI.BigInt(10000))
@@ -63,6 +64,7 @@ export function computeTradePriceBreakdown(
 }
 
 export async function w3computeTradePriceBreakdown(
+  client: Web3ApiClient,
   trade?: W3Trade | null
 ): Promise<{ priceImpactWithoutFee: Decimal | undefined; realizedLPFee: W3TokenAmount | undefined | null }> {
   // for each hop in our trade, take away the x*y=k price impact from 0.3% fees
@@ -78,7 +80,8 @@ export async function w3computeTradePriceBreakdown(
 
   // remove lp fees from price impact
   // the x*y=k impact
-  const priceImpactWithoutFee = trade && realizedLPFee ? (await w3TradeSlippage(trade)).sub(realizedLPFee) : undefined
+  const priceImpactWithoutFee =
+    trade && realizedLPFee ? (await w3TradeSlippage(client, trade)).sub(realizedLPFee) : undefined
 
   // the amount of the input that accrues to LPs
   const realizedLPFeeAmount =
@@ -114,13 +117,14 @@ export function computeSlippageAdjustedAmounts(
 }
 
 export async function w3ComputeSlippageAdjustedAmounts(
+  client: Web3ApiClient,
   trade: W3Trade | undefined,
   allowedSlippage: number
 ): Promise<{ [field in Field]?: W3TokenAmount }> {
   const pct = w3BasisPointsToPercent(allowedSlippage)
   return {
-    [Field.INPUT]: trade ? await w3TradeMaximumAmountIn(trade, pct.toString()) : undefined,
-    [Field.OUTPUT]: trade ? await w3TradeMinimumAmountOut(trade, pct.toString()) : undefined
+    [Field.INPUT]: trade ? await w3TradeMaximumAmountIn(client, trade, pct.toString()) : undefined,
+    [Field.OUTPUT]: trade ? await w3TradeMinimumAmountOut(client, trade, pct.toString()) : undefined
   }
 }
 
@@ -153,11 +157,15 @@ export function formatExecutionPrice(trade?: Trade, inverted?: boolean): string 
       }`
 }
 
-export async function w3formatExecutionPrice(trade?: W3Trade, inverted?: boolean): Promise<string> {
+export async function w3formatExecutionPrice(
+  client: Web3ApiClient,
+  trade?: W3Trade,
+  inverted?: boolean
+): Promise<string> {
   if (!trade) {
     return ''
   }
-  const executionPrice = await w3TradeExecutionPrice(trade)
+  const executionPrice = await w3TradeExecutionPrice(client, trade)
   return inverted
     ? `${new Decimal(1).div(executionPrice).toSignificantDigits(6)} ${trade.inputAmount.token.currency.symbol} / ${
         trade.outputAmount.token.currency.symbol
