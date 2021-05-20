@@ -1,7 +1,6 @@
 import { W3Currency } from './types'
 
-export const ipfsUri = 'ipfs/QmRgLryre3KpkmyNXaWdxePXx8QVeJXbWkhjCBNoWK4VRZ/'
-// export const ipfsUri = 'ipfs/QmRQuz7KDtRAYXyZo7GMXedJkrAT2uUTE1isJCEZ5Wz9T3/'
+export const ipfsUri = 'ipfs/Qmeire121jPTSV5raqxoZdb3wX889SKCt17oKs41HLas9y'
 
 export const ETHER: W3Currency = {
   decimals: 18,
