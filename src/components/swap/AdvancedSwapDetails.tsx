@@ -3,7 +3,10 @@ import styled, { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { useUserSlippageTolerance } from '../../state/user/hooks'
 import { TYPE, ExternalLink } from '../../theme'
-import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown } from '../../utils/prices'
+import {
+  w3ComputeSlippageAdjustedAmounts,
+  w3computeTradePriceBreakdown,
+} from '../../utils/prices'
 import { AutoColumn } from '../Column'
 import QuestionHelper from '../QuestionHelper'
 import { RowBetween, RowFixed } from '../Row'
@@ -27,28 +30,23 @@ const InfoLink = styled(ExternalLink)`
 function TradeSummary({ trade, allowedSlippage }: { trade: W3Trade; allowedSlippage: number }) {
   const theme = useContext(ThemeContext)
 
-  const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
-  const [realizedLPFee, setRealizedLPFee] = useState<W3TokenAmount | undefined>(undefined)
-  useEffect(() => {
-    w3computeTradePriceBreakdown(trade).then(breakdown => {
-      const { priceImpactWithoutFee, realizedLPFee } = breakdown
-      setPriceImpactWithoutFee(priceImpactWithoutFee)
-      setRealizedLPFee(realizedLPFee ?? undefined)
-    })
-  }, [trade])
-
-  const isExactIn = trade.tradeType === W3TradeType.EXACT_INPUT
-
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
     { [field in Field]?: W3TokenAmount } | undefined
   >(undefined)
+  const [priceImpactWithoutFee, setPriceImpactWithoutFee] = useState<Decimal | undefined>(undefined)
+  const [realizedLPFee, setRealizedLPFee] = useState<W3TokenAmount | undefined>(undefined)
   useEffect(() => {
-    if (trade) {
-      w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage).then(amounts => setSlippageAdjustedAmounts(amounts))
-    } else {
-      setSlippageAdjustedAmounts(undefined)
+    const updateStateAsync = async () => {
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(trade, allowedSlippage)
+      const { priceImpactWithoutFee, realizedLPFee } = await w3computeTradePriceBreakdown(trade)
+      setSlippageAdjustedAmounts(slippageAdjustedAmounts)
+      setPriceImpactWithoutFee(priceImpactWithoutFee)
+      setRealizedLPFee(realizedLPFee ?? undefined)
     }
+    updateStateAsync()
   }, [trade, allowedSlippage])
+
+  const isExactIn = trade.tradeType === W3TradeType.EXACT_INPUT
 
   return (
     <>
