@@ -16,7 +16,7 @@ import Decimal from 'decimal.js'
 import { reverseMapToken } from '../../web3api/mapping'
 import { toSignificant } from '../../web3api/utils'
 import { Web3ApiClient } from '@web3api/client-js'
-import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
+import { useWeb3ApiClient } from '../../../../Web3-API/monorepo/packages/js/react'
 
 export default function SwapModalHeader({
   trade,
@@ -31,9 +31,8 @@ export default function SwapModalHeader({
   showAcceptChanges: boolean
   onAcceptChanges: () => void
 }) {
-  // TODO: replace with forthcoming useClient hook
   // get web3api client
-  const client: Web3ApiClient = Web3ApiClientManager.client
+  const client: Web3ApiClient = useWeb3ApiClient({})
 
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
     { [field in Field]?: W3TokenAmount } | undefined

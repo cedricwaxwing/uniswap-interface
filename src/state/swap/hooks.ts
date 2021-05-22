@@ -20,7 +20,7 @@ import { isEther } from '../../web3api/utils'
 import useENS from '../../hooks/useENS'
 import { useUserSlippageTolerance } from '../user/hooks'
 import { Web3ApiClient } from '@web3api/client-js'
-import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
+import { useWeb3ApiClient } from '../../../../Web3-API/monorepo/packages/js/react'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
@@ -214,9 +214,8 @@ export function useDerivedSwapInfo(): {
     [Field.OUTPUT]: outputCurrency ?? undefined
   }
 
-  // TODO: replace with forthcoming useClient hook
   // get web3api client
-  const client: Web3ApiClient = Web3ApiClientManager.client
+  const client: Web3ApiClient = useWeb3ApiClient({})
   // get info needed for input validation
   const recipientLookup = useENS(recipient ?? undefined)
   const to: string | null = (recipient === null ? account : recipientLookup.address) ?? null

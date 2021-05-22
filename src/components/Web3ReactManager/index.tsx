@@ -9,7 +9,6 @@ import Loader from '../Loader'
 import { UriRedirect } from '@web3api/client-js'
 import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 import { Web3ApiProvider } from '@web3api/react'
-import { Web3ApiClientManager } from '../../web3api/Web3ApiClientManager'
 import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
 
 const MessageWrapper = styled.div`
@@ -29,25 +28,26 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
   const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
 
   // Web3API integration.
-  const [redirects, setRedirects] = useState<UriRedirect[]>([
+  const [provider, setProvider] = useState<string>(network.provider.url)
+  const redirects: UriRedirect[] = [
     {
       from: 'ens/ethereum.web3api.eth',
       to: ethereumPlugin({
         networks: {
           MAINNET: {
-            provider: network.provider.url
+            provider: provider
           },
           RINKEBY: {
-            provider: network.provider.url
+            provider: provider
           },
           ROPSTEN: {
-            provider: network.provider.url
+            provider: provider
           },
           KOVAN: {
-            provider: network.provider.url
+            provider: provider
           },
           GOERLI: {
-            provider: network.provider.url
+            provider: provider
           }
         },
         defaultNetwork: 'MAINNET'
@@ -59,7 +59,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
         provider: 'https://ipfs.io'
       })
     }
-  ])
+  ]
 
   // try to eagerly connect to an injected provider, if it exists and has granted access already
   const triedEager = useEagerConnect()
@@ -69,7 +69,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
     if (triedEager && !networkActive && !networkError && !active) {
       activateNetwork(network)
     }
-    setRedirects(Web3ApiClientManager.setProvider(network.provider.url))
+    setProvider(network.provider.url)
   }, [triedEager, networkActive, networkError, activateNetwork, active])
 
   // when there's no account connected, react to logins (broadly speaking) on the injected provider, if it exists

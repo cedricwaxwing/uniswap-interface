@@ -13,7 +13,7 @@ import { w3SwapCallParameters } from '../web3api/tradeWrappers'
 import Decimal from 'decimal.js'
 import { toSignificant } from '../web3api/utils'
 import { Web3ApiClient } from '@web3api/client-js'
-import { Web3ApiClientManager } from '../web3api/Web3ApiClientManager'
+import { useWeb3ApiClient } from '../../../Web3-API/monorepo/packages/js/react'
 
 export enum SwapCallbackState {
   INVALID,
@@ -60,9 +60,8 @@ function useSwapCallArguments(
   const recipient = recipientAddressOrName === null ? account : recipientAddress
   const deadline = useTransactionDeadline()
 
-  // TODO: replace with forthcoming useClient hook
   // get web3api client
-  const client: Web3ApiClient = Web3ApiClientManager.client
+  const client: Web3ApiClient = useWeb3ApiClient({})
 
   return useMemo(() => {
     if (!trade || !recipient || !library || !account || !chainId || !deadline) return []
