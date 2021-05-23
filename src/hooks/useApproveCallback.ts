@@ -1,15 +1,18 @@
 import { MaxUint256 } from '@ethersproject/constants'
-import { TransactionResponse } from '@ethersproject/providers'
 import { useCallback, useMemo } from 'react'
 import { ROUTER_ADDRESS } from '../constants'
 import { useTokenAllowance } from '../data/Allowances'
-import { useTransactionAdder, useHasPendingApproval } from '../state/transactions/hooks'
+import { useHasPendingApproval, useW3TransactionAdder } from '../state/transactions/hooks'
 import { calculateGasMargin } from '../utils'
 import { useTokenContract } from './useContract'
 import { useActiveWeb3React } from './index'
-import { W3TokenAmount, W3Trade } from '../web3api/types'
+import { W3TokenAmount, W3Trade, W3TxReceipt } from '../web3api/types'
 import { isEther } from '../web3api/utils'
 import Decimal from 'decimal.js'
+import { Web3ApiClient } from '@web3api/client-js'
+import { useWeb3ApiClient } from '../web3api/hooks'
+import { w3Approve } from '../web3api/tradeWrappers'
+import { BigNumber } from 'ethers'
 
 export enum ApprovalState {
   UNKNOWN,
@@ -28,6 +31,9 @@ export function useApproveCallback(
   const currentAllowance = useTokenAllowance(token, account ?? undefined, spender)
   const pendingApproval = useHasPendingApproval(token?.address, spender)
 
+  // TODO: replace with new client hook
+  const client: Web3ApiClient = useWeb3ApiClient()
+
   // check the current approval status
   const approvalState: ApprovalState = useMemo(() => {
     if (!amountToApprove || !spender) return ApprovalState.UNKNOWN
@@ -44,7 +50,7 @@ export function useApproveCallback(
   }, [amountToApprove, currentAllowance, pendingApproval, spender])
 
   const tokenContract = useTokenContract(token?.address)
-  const addTransaction = useTransactionAdder()
+  const addTransaction = useW3TransactionAdder()
 
   const approve = useCallback(async (): Promise<void> => {
     if (approvalState !== ApprovalState.NOT_APPROVED) {
@@ -78,12 +84,14 @@ export function useApproveCallback(
       return tokenContract.estimateGas.approve(spender, amountToApprove.amount)
     })
 
-    return tokenContract
-      .approve(spender, useExact ? amountToApprove.amount : MaxUint256, {
-        gasLimit: calculateGasMargin(estimatedGas)
-      })
-      .then((response: TransactionResponse) => {
-        addTransaction(response, {
+    const gasMargin = calculateGasMargin(BigNumber.from(estimatedGas))
+
+    return w3Approve(client, token, useExact ? amountToApprove.amount : undefined, {
+      gasLimit: gasMargin.toString(),
+      gasPrice: null
+    })
+      .then((receipt: W3TxReceipt) => {
+        addTransaction(receipt, {
           summary: 'Approve ' + amountToApprove.token.currency.symbol,
           approval: { tokenAddress: token.address, spender: spender }
         })
@@ -92,7 +100,7 @@ export function useApproveCallback(
         console.debug('Failed to approve token', error)
         throw error
       })
-  }, [approvalState, token, tokenContract, amountToApprove, spender, addTransaction])
+  }, [approvalState, token, tokenContract, amountToApprove, spender, addTransaction, client])
 
   return [approvalState, approve]
 }

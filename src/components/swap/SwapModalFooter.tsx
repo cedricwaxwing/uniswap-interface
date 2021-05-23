@@ -20,7 +20,7 @@ import { W3TokenAmount, W3Trade, W3TradeType } from '../../web3api/types'
 import Decimal from 'decimal.js'
 import { toSignificant } from '../../web3api/utils'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '../../../../Web3-API/monorepo/packages/js/react'
+import { useWeb3ApiClient } from '../../web3api/hooks'
 
 export default function SwapModalFooter({
   trade,
@@ -39,7 +39,8 @@ export default function SwapModalFooter({
   const theme = useContext(ThemeContext)
 
   // get web3api client
-  const client: Web3ApiClient = useWeb3ApiClient({})
+  // TODO: replace with new client hook
+  const client: Web3ApiClient = useWeb3ApiClient()
 
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<
     { [field in Field]?: W3TokenAmount } | undefined

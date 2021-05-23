@@ -68,3 +68,38 @@ export interface W3TradeOptions {
   deadline?: number
   feeOnTransfer?: boolean
 }
+
+export interface W3Log {
+  blockNumber: number
+  blockHash: string
+  transactionIndex: number
+  removed: boolean
+  address: string
+  data: string
+  topics: string[]
+  transactionHash: string
+  logIndex: number
+}
+
+export interface W3TxReceipt {
+  to: string
+  from: string
+  contractAddress: string
+  transactionIndex: number
+  root: string
+  gasUsed: string
+  logsBloom: string
+  blockHash: string
+  transactionHash: string
+  logs: W3Log[]
+  blockNumber: number
+  confirmations: number
+  cumulativeGasUsed: string
+  byzantium: boolean
+  status: number
+}
+
+export interface W3TxOverrides {
+  gasPrice: string | null
+  gasLimit: string | null
+}

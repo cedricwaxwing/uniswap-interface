@@ -1,9 +1,18 @@
-import { W3BestTradeOptions, W3Pair, W3SwapParameters, W3Token, W3TokenAmount, W3Trade, W3TradeOptions } from './types'
+import {
+  W3BestTradeOptions,
+  W3ChainId,
+  W3Pair,
+  W3SwapParameters,
+  W3Token,
+  W3TokenAmount,
+  W3Trade,
+  W3TradeOptions,
+  W3TxOverrides,
+  W3TxReceipt
+} from './types'
 import { ipfsUri } from './constants'
 import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
-
-// const client: Web3ApiClient = Web3ApiClientManager.client
 
 export async function w3TradeExecutionPrice(client: Web3ApiClient, trade: W3Trade): Promise<Decimal> {
   const query = await client.query<{
@@ -220,4 +229,134 @@ export async function w3TradeSlippage(client: Web3ApiClient, trade: W3Trade): Pr
     }
   }
   return new Decimal(result)
+}
+
+export async function w3ExecCall(
+  client: Web3ApiClient,
+  parameters: W3SwapParameters,
+  chainId: W3ChainId,
+  txOverrides?: W3TxOverrides
+): Promise<W3TxReceipt> {
+  const query = await client.query<{
+    execCall: W3TxReceipt
+  }>({
+    uri: ipfsUri,
+    query: `mutation {
+        execCall(
+          parameters: $parameters
+          chainId: $chainId
+          txOverrides: $txOverrides
+         )
+       }`,
+    variables: {
+      parameters: parameters,
+      chainId: chainId,
+      txOverrides: txOverrides ?? null
+    }
+  })
+  const result: W3TxReceipt | undefined = query.data?.execCall
+  if (!result) {
+    if (query.errors) {
+      throw Error(query.errors.map(e => e.message).toString())
+    } else {
+      throw Error('Unknown Web3API query error; query result data is undefined')
+    }
+  }
+  return result
+}
+
+export async function w3EstimateGas(
+  client: Web3ApiClient,
+  parameters: W3SwapParameters,
+  chainId: W3ChainId
+): Promise<string> {
+  const query = await client.query<{
+    estimateGas: string
+  }>({
+    uri: ipfsUri,
+    query: `query {
+        estimateGas(
+          parameters: $parameters
+          chainId: $chainId
+         )
+       }`,
+    variables: {
+      parameters: parameters,
+      chainId: chainId
+    }
+  })
+  const result: string | undefined = query.data?.estimateGas
+  if (!result) {
+    if (query.errors) {
+      throw Error(query.errors.map(e => e.message).toString())
+    } else {
+      throw Error('Unknown Web3API query error; query result data is undefined')
+    }
+  }
+  return result
+}
+
+export async function w3ExecCallStatic(
+  client: Web3ApiClient,
+  parameters: W3SwapParameters,
+  chainId: W3ChainId
+): Promise<string> {
+  const query = await client.query<{
+    execCallStatic: string
+  }>({
+    uri: ipfsUri,
+    query: `query {
+        execCallStatic(
+          parameters: $parameters
+          chainId: $chainId
+         )
+       }`,
+    variables: {
+      parameters: parameters,
+      chainId: chainId
+    }
+  })
+  const result: string | undefined = query.data?.execCallStatic
+  if (result === undefined) {
+    if (query.errors) {
+      throw Error(query.errors.map(e => e.message).toString())
+    } else {
+      throw Error('Unknown Web3API query error; query result data is undefined')
+    }
+  }
+  return result
+}
+
+export async function w3Approve(
+  client: Web3ApiClient,
+  token: W3Token,
+  amountToApprove?: string,
+  txOverrides?: W3TxOverrides
+): Promise<W3TxReceipt> {
+  const query = await client.query<{
+    approve: W3TxReceipt
+  }>({
+    uri: ipfsUri,
+    query: `mutation {
+        approve(
+          token: $token
+          amountToApprove: $amountToApprove
+          txOverrides: $txOverrides
+         )
+       }`,
+    variables: {
+      token: token,
+      amountToApprove: amountToApprove ?? null,
+      txOverrides: txOverrides ?? null
+    }
+  })
+  const result: W3TxReceipt | undefined = query.data?.approve
+  if (result === undefined) {
+    if (query.errors) {
+      throw Error(query.errors.map(e => e.message).toString())
+    } else {
+      throw Error('Unknown Web3API query error; query result data is undefined')
+    }
+  }
+  return result
 }

@@ -1,19 +1,18 @@
-import { BigNumber } from '@ethersproject/bignumber'
-import { Contract } from '@ethersproject/contracts'
 import { useMemo } from 'react'
 import { INITIAL_ALLOWED_SLIPPAGE, W3BIPS_BASE } from '../constants'
-import { useTransactionAdder } from '../state/transactions/hooks'
-import { calculateGasMargin, getRouterContract, isAddress, shortenAddress } from '../utils'
-import isZero from '../utils/isZero'
+import { useW3TransactionAdder } from '../state/transactions/hooks'
+import { calculateGasMargin, isAddress, shortenAddress } from '../utils'
 import { useActiveWeb3React } from './index'
 import useTransactionDeadline from './useTransactionDeadline'
 import useENS from './useENS'
-import { W3SwapParameters, W3Trade, W3TradeType } from '../web3api/types'
-import { w3SwapCallParameters } from '../web3api/tradeWrappers'
+import { W3ChainId, W3SwapParameters, W3Trade, W3TradeType, W3TxReceipt } from '../web3api/types'
+import { w3EstimateGas, w3ExecCall, w3ExecCallStatic, w3SwapCallParameters } from '../web3api/tradeWrappers'
 import Decimal from 'decimal.js'
 import { toSignificant } from '../web3api/utils'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '../../../Web3-API/monorepo/packages/js/react'
+import { useWeb3ApiClient } from '../web3api/hooks'
+import { mapChainId } from '../web3api/mapping'
+import { BigNumber } from 'ethers'
 
 export enum SwapCallbackState {
   INVALID,
@@ -22,18 +21,18 @@ export enum SwapCallbackState {
 }
 
 interface SwapCallAsync {
-  contract: Contract
+  chainId: W3ChainId
   parameters: Promise<W3SwapParameters>
 }
 
 interface SwapCall {
-  contract: Contract
+  chainId: W3ChainId
   parameters: W3SwapParameters
 }
 
 interface SuccessfulCall {
   call: SwapCall
-  gasEstimate: BigNumber
+  gasEstimate: string
 }
 
 interface FailedCall {
@@ -61,16 +60,13 @@ function useSwapCallArguments(
   const deadline = useTransactionDeadline()
 
   // get web3api client
-  const client: Web3ApiClient = useWeb3ApiClient({})
+  // TODO: replace with new client hook
+  const client: Web3ApiClient = useWeb3ApiClient()
 
   return useMemo(() => {
     if (!trade || !recipient || !library || !account || !chainId || !deadline) return []
 
-    const contract: Contract | null = getRouterContract(chainId, library, account)
-    if (!contract) {
-      return []
-    }
-
+    const w3ChainId: W3ChainId = mapChainId(chainId)
     const swapMethods = []
 
     swapMethods.push(
@@ -94,7 +90,7 @@ function useSwapCallArguments(
         })
       )
     }
-    return swapMethods.map(parameters => ({ parameters, contract }))
+    return swapMethods.map(parameters => ({ parameters, chainId: w3ChainId }))
   }, [account, allowedSlippage, chainId, deadline, library, recipient, trade, client])
 }
 
@@ -107,9 +103,12 @@ export function useSwapCallback(
 ): { state: SwapCallbackState; callback: null | (() => Promise<string>); error: string | null } {
   const { account, chainId, library } = useActiveWeb3React()
 
+  // TODO: replace with new client hook
+  const client: Web3ApiClient = useWeb3ApiClient()
+
   const swapCalls = useSwapCallArguments(trade, allowedSlippage, recipientAddressOrName)
 
-  const addTransaction = useTransactionAdder()
+  const addTransaction = useW3TransactionAdder()
 
   const { address: recipientAddress } = useENS(recipientAddressOrName)
   const recipient = recipientAddressOrName === null ? account : recipientAddress
@@ -133,15 +132,10 @@ export function useSwapCallback(
           swapCalls.map(async callAsync => {
             const call: SwapCall = {
               parameters: await callAsync.parameters,
-              contract: callAsync.contract
+              chainId: callAsync.chainId
             }
-            const {
-              parameters: { methodName, args, value },
-              contract
-            } = call
-            const options = !value || isZero(value) ? {} : { value }
-
-            return contract.estimateGas[methodName](...args, options)
+            const { parameters, chainId } = call
+            return w3EstimateGas(client, parameters, chainId)
               .then(gasEstimate => {
                 return {
                   call,
@@ -151,25 +145,24 @@ export function useSwapCallback(
               .catch(gasError => {
                 console.debug('Gas estimate failed, trying eth_call to extract error', call)
 
-                return contract.callStatic[methodName](...args, options)
-                  .then(result => {
-                    console.debug('Unexpected successful call after failed estimate gas', call, gasError, result)
+                return w3ExecCallStatic(client, parameters, chainId).then(callError => {
+                  if (!callError) {
+                    console.debug('Unexpected successful call after failed estimate gas', call, gasError)
                     return { call, error: new Error('Unexpected issue with estimating the gas. Please try again.') }
-                  })
-                  .catch(callError => {
-                    console.debug('Call threw error', call, callError)
-                    let errorMessage: string
-                    switch (callError.reason) {
-                      case 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT':
-                      case 'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT':
-                        errorMessage =
-                          'This transaction will not succeed either due to price movement or fee on transfer. Try increasing your slippage tolerance.'
-                        break
-                      default:
-                        errorMessage = `The transaction cannot succeed due to error: ${callError.reason}. This is probably an issue with one of the tokens you are swapping.`
-                    }
-                    return { call, error: new Error(errorMessage) }
-                  })
+                  }
+                  console.debug('Call threw error', call, callError)
+                  let errorMessage: string
+                  switch (callError) {
+                    case 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT':
+                    case 'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT':
+                      errorMessage =
+                        'This transaction will not succeed either due to price movement or fee on transfer. Try increasing your slippage tolerance.'
+                      break
+                    default:
+                      errorMessage = `The transaction cannot succeed due to error: ${callError}. This is probably an issue with one of the tokens you are swapping.`
+                  }
+                  return { call, error: new Error(errorMessage) }
+                })
               })
           })
         )
@@ -187,18 +180,14 @@ export function useSwapCallback(
         }
 
         const {
-          call: {
-            contract,
-            parameters: { methodName, args, value }
-          },
+          call: { parameters, chainId },
           gasEstimate
         } = successfulEstimation
 
-        return contract[methodName](...args, {
-          gasLimit: calculateGasMargin(gasEstimate),
-          ...(value && !isZero(value) ? { value, from: account } : { from: account })
-        })
-          .then((response: any) => {
+        const gasMargin = calculateGasMargin(BigNumber.from(gasEstimate))
+
+        return w3ExecCall(client, parameters, chainId, { gasLimit: gasMargin.toString(), gasPrice: null })
+          .then((receipt: W3TxReceipt) => {
             const inputSymbol = trade.inputAmount.token.currency.symbol
             const outputSymbol = trade.outputAmount.token.currency.symbol
             const inputAmount = toSignificant(trade.inputAmount, 3)
@@ -214,11 +203,11 @@ export function useSwapCallback(
                       : recipientAddressOrName
                   }`
 
-            addTransaction(response, {
+            addTransaction(receipt, {
               summary: withRecipient
             })
 
-            return response.hash
+            return receipt.transactionHash
           })
           .catch((error: any) => {
             // if the user rejected the tx, pass this along
@@ -226,12 +215,12 @@ export function useSwapCallback(
               throw new Error('Transaction rejected.')
             } else {
               // otherwise, the error was unexpected and we need to convey that
-              console.error(`Swap failed`, error, methodName, args, value)
+              console.error(`Swap failed`, error, parameters.methodName, parameters.args, parameters.value)
               throw new Error(`Swap failed: ${error.message}`)
             }
           })
       },
       error: null
     }
-  }, [trade, library, account, chainId, recipient, recipientAddressOrName, swapCalls, addTransaction])
+  }, [trade, library, account, chainId, recipient, recipientAddressOrName, swapCalls, addTransaction, client])
 }

@@ -53,7 +53,7 @@ import { isEther, isToken, toExact, toSignificant } from '../../web3api/utils'
 import { Currency } from '@uniswap/sdk'
 import { w3TradeExecutionPrice } from '../../web3api/tradeWrappers'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '../../../../Web3-API/monorepo/packages/js/react'
+import { useWeb3ApiClient } from '../../web3api/hooks'
 
 export default function Swap({ history }: RouteComponentProps) {
   const loadedUrlParams = useDefaultsFromURLSearch()
@@ -95,7 +95,8 @@ export default function Swap({ history }: RouteComponentProps) {
   const toggledVersion = useToggledVersion()
 
   // get web3api client
-  const client: Web3ApiClient = useWeb3ApiClient({})
+  // TODO: replace with new client hook
+  const client: Web3ApiClient = useWeb3ApiClient()
 
   // swap state
   const { independentField, typedValue, recipient } = useSwapState()
