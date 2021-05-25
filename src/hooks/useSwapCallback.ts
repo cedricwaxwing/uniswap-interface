@@ -10,9 +10,9 @@ import { w3EstimateGas, w3ExecCall, w3ExecCallStatic, w3SwapCallParameters } fro
 import Decimal from 'decimal.js'
 import { toSignificant } from '../web3api/utils'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '../web3api/hooks'
 import { mapChainId } from '../web3api/mapping'
 import { BigNumber } from 'ethers'
+import { useWeb3ApiClient } from '@web3api/react'
 
 export enum SwapCallbackState {
   INVALID,
@@ -60,7 +60,6 @@ function useSwapCallArguments(
   const deadline = useTransactionDeadline()
 
   // get web3api client
-  // TODO: replace with new client hook
   const client: Web3ApiClient = useWeb3ApiClient()
 
   return useMemo(() => {
@@ -103,7 +102,6 @@ export function useSwapCallback(
 ): { state: SwapCallbackState; callback: null | (() => Promise<string>); error: string | null } {
   const { account, chainId, library } = useActiveWeb3React()
 
-  // TODO: replace with new client hook
   const client: Web3ApiClient = useWeb3ApiClient()
 
   const swapCalls = useSwapCallArguments(trade, allowedSlippage, recipientAddressOrName)

@@ -14,7 +14,7 @@ import Decimal from 'decimal.js'
 import { toSignificant } from '../../web3api/utils'
 import { reverseMapPair } from '../../web3api/mapping'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '../../web3api/hooks'
+import { useWeb3ApiClient } from '@web3api/react'
 
 const InfoLink = styled(ExternalLink)`
   width: 100%;
@@ -30,7 +30,6 @@ function TradeSummary({ trade, allowedSlippage }: { trade: W3Trade; allowedSlipp
   const theme = useContext(ThemeContext)
 
   // get web3api client
-  // TODO: replace with new client hook
   const client: Web3ApiClient = useWeb3ApiClient()
 
   const [slippageAdjustedAmounts, setSlippageAdjustedAmounts] = useState<

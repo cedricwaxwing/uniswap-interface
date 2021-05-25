@@ -53,7 +53,7 @@ import { isEther, isToken, toExact, toSignificant } from '../../web3api/utils'
 import { Currency } from '@uniswap/sdk'
 import { w3TradeExecutionPrice } from '../../web3api/tradeWrappers'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '../../web3api/hooks'
+import { useWeb3ApiClient } from '@web3api/react'
 
 export default function Swap({ history }: RouteComponentProps) {
   const loadedUrlParams = useDefaultsFromURLSearch()
@@ -95,7 +95,6 @@ export default function Swap({ history }: RouteComponentProps) {
   const toggledVersion = useToggledVersion()
 
   // get web3api client
-  // TODO: replace with new client hook
   const client: Web3ApiClient = useWeb3ApiClient()
 
   // swap state
@@ -127,6 +126,9 @@ export default function Swap({ history }: RouteComponentProps) {
     updateStateAsync()
   }, [currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync, allowedSlippage, client])
 
+  console.log("currencies: " + JSON.stringify(currencies.INPUT?.currency.symbol) + " " + JSON.stringify(currencies.OUTPUT?.currency.symbol))
+  console.log("trade currencies: " + JSON.stringify(v2Trade?.inputAmount.token.currency.symbol) + " " + JSON.stringify(v2Trade?.outputAmount.token.currency.symbol))
+
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
     currencies[Field.INPUT],
     currencies[Field.OUTPUT],
@@ -136,7 +138,6 @@ export default function Swap({ history }: RouteComponentProps) {
   const { address: recipientAddress } = useENSAddress(recipient)
 
   const trade = showWrap ? undefined : v2Trade
-  const defaultTrade = showWrap ? undefined : v2Trade
 
   const parsedAmounts = showWrap
     ? {
@@ -535,7 +536,7 @@ export default function Swap({ history }: RouteComponentProps) {
               </Column>
             )}
             {isExpertMode && swapErrorMessage ? <SwapCallbackError error={swapErrorMessage} /> : null}
-            {toggledVersion !== DEFAULT_VERSION && defaultTrade ? <DefaultVersionLink /> : null}
+            {toggledVersion !== DEFAULT_VERSION && trade ? <DefaultVersionLink /> : null}
           </BottomGrouping>
         </Wrapper>
       </AppBody>

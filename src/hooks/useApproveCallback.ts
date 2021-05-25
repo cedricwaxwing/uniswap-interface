@@ -10,9 +10,9 @@ import { W3TokenAmount, W3Trade, W3TxReceipt } from '../web3api/types'
 import { isEther } from '../web3api/utils'
 import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '../web3api/hooks'
 import { w3Approve } from '../web3api/tradeWrappers'
 import { BigNumber } from 'ethers'
+import { useWeb3ApiClient } from '@web3api/react'
 
 export enum ApprovalState {
   UNKNOWN,
@@ -31,7 +31,6 @@ export function useApproveCallback(
   const currentAllowance = useTokenAllowance(token, account ?? undefined, spender)
   const pendingApproval = useHasPendingApproval(token?.address, spender)
 
-  // TODO: replace with new client hook
   const client: Web3ApiClient = useWeb3ApiClient()
 
   // check the current approval status

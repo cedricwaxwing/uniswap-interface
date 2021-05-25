@@ -19,7 +19,7 @@ import { mapChainId, mapPair, mapToken, reverseMapToken } from '../web3api/mappi
 import { tokenEquals } from '../web3api/utils'
 import { wrappedCurrency } from '../utils/w3WrappedCurrency'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '../web3api/hooks'
+import { useWeb3ApiClient } from '@web3api/react'
 
 function useAllCommonPairs(currencyA?: W3Token, currencyB?: W3Token): W3Pair[] {
   const { chainId } = useActiveWeb3React()
@@ -183,9 +183,8 @@ async function bestExactOut(
 export function useTradeExactIn(currencyAmountIn?: W3TokenAmount, currencyOut?: W3Token): Promise<W3Trade | null> {
   const allowedPairs = useAllCommonPairs(currencyAmountIn?.token, currencyOut)
   const [singleHopOnly] = useUserSingleHopOnly()
-  // TODO: replace with new client hook
   const client: Web3ApiClient = useWeb3ApiClient()
-  console.log("currencyOut: " + JSON.stringify(currencyOut))
+
   return useMemo(() => bestExactIn(client, allowedPairs, singleHopOnly, currencyAmountIn, currencyOut), [
     client,
     allowedPairs,
@@ -201,7 +200,6 @@ export function useTradeExactIn(currencyAmountIn?: W3TokenAmount, currencyOut?: 
 export function useTradeExactOut(currencyIn?: W3Token, currencyAmountOut?: W3TokenAmount): Promise<W3Trade | null> {
   const allowedPairs = useAllCommonPairs(currencyIn, currencyAmountOut?.token)
   const [singleHopOnly] = useUserSingleHopOnly()
-  // TODO: replace with new client hook
   const client: Web3ApiClient = useWeb3ApiClient()
 
   return useMemo(() => bestExactOut(client, allowedPairs, singleHopOnly, currencyIn, currencyAmountOut), [
