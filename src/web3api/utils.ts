@@ -114,3 +114,20 @@ export function toExact(tokenAmount?: W3TokenAmount): string | undefined {
   const denominator = new Decimal(10).pow(tokenAmount.token.currency.decimals)
   return numerator.div(denominator).toString()
 }
+
+export function chainIdToName(chainId: W3ChainId): string {
+  switch (chainId) {
+    case W3ChainId.MAINNET:
+      return 'MAINNET'
+    case W3ChainId.ROPSTEN:
+      return 'ROPSTEN'
+    case W3ChainId.RINKEBY:
+      return 'RINKEBY'
+    case W3ChainId.GÖRLI:
+      return 'GOERLI'
+    case W3ChainId.KOVAN:
+      return 'KOVAN'
+    default:
+      throw new Error('Unknown chain ID')
+  }
+}

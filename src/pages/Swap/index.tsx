@@ -112,12 +112,12 @@ export default function Swap({ history }: RouteComponentProps) {
   const { currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync } = useDerivedSwapInfo()
   useEffect(() => {
     const updateStateAsync = async () => {
-      const v2Trade = (await v2TradeAsync) ?? undefined
+      const bestTrade = (await v2TradeAsync) ?? undefined
       const inputError = await inputErrorAsync
-      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(client, v2Trade, allowedSlippage)
-      const { priceImpactWithoutFee } = await w3computeTradePriceBreakdown(client, v2Trade)
-      const tradeExecutionPrice = v2Trade ? await w3TradeExecutionPrice(client, v2Trade) : undefined
-      setV2Trade(v2Trade)
+      const slippageAdjustedAmounts = await w3ComputeSlippageAdjustedAmounts(client, bestTrade, allowedSlippage)
+      const { priceImpactWithoutFee } = await w3computeTradePriceBreakdown(client, bestTrade)
+      const tradeExecutionPrice = bestTrade ? await w3TradeExecutionPrice(client, bestTrade) : undefined
+      setV2Trade(bestTrade)
       setSwapInputError(inputError)
       setAmountToApprove(slippageAdjustedAmounts[Field.INPUT])
       setPriceImpactWithoutFee(priceImpactWithoutFee)
@@ -125,9 +125,6 @@ export default function Swap({ history }: RouteComponentProps) {
     }
     updateStateAsync()
   }, [currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync, allowedSlippage, client])
-
-  console.log("currencies: " + JSON.stringify(currencies.INPUT?.currency.symbol) + " " + JSON.stringify(currencies.OUTPUT?.currency.symbol))
-  console.log("trade currencies: " + JSON.stringify(v2Trade?.inputAmount.token.currency.symbol) + " " + JSON.stringify(v2Trade?.outputAmount.token.currency.symbol))
 
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
     currencies[Field.INPUT],

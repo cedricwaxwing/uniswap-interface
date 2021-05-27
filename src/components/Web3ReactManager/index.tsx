@@ -24,30 +24,38 @@ const Message = styled.h2`
 
 export default function Web3ReactManager({ children }: { children: JSX.Element }) {
   const { t } = useTranslation()
-  const { active } = useWeb3React()
+  const { active, account } = useWeb3React()
   const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
 
   // Web3API integration.
-  const [provider, setProvider] = useState<string>(network.provider.url)
+  const [ethConfig, setEthConfig] = useState<{ provider: string; signer: string | undefined }>({
+    provider: network.provider.url,
+    signer: account ?? undefined
+  })
   const redirects: UriRedirect[] = [
     {
       from: 'ens/ethereum.web3api.eth',
       to: ethereumPlugin({
         networks: {
           MAINNET: {
-            provider: provider
+            provider: ethConfig.provider,
+            signer: ethConfig.signer
           },
           RINKEBY: {
-            provider: provider
+            provider: ethConfig.provider,
+            signer: ethConfig.signer
           },
           ROPSTEN: {
-            provider: provider
+            provider: ethConfig.provider,
+            signer: ethConfig.signer
           },
           KOVAN: {
-            provider: provider
+            provider: ethConfig.provider,
+            signer: ethConfig.signer
           },
           GOERLI: {
-            provider: provider
+            provider: ethConfig.provider,
+            signer: ethConfig.signer
           }
         },
         defaultNetwork: 'MAINNET'
@@ -69,8 +77,8 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
     if (triedEager && !networkActive && !networkError && !active) {
       activateNetwork(network)
     }
-    setProvider(network.provider.url)
-  }, [triedEager, networkActive, networkError, activateNetwork, active])
+    setEthConfig({ provider: network.provider.url, signer: account ?? undefined })
+  }, [triedEager, networkActive, networkError, activateNetwork, active, account])
 
   // when there's no account connected, react to logins (broadly speaking) on the injected provider, if it exists
   useInactiveListener(!triedEager)

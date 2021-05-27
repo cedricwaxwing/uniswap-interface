@@ -1,5 +1,4 @@
 import { parseUnits } from '@ethersproject/units'
-import { Pair, Token } from '@uniswap/sdk'
 import { ParsedQs } from 'qs'
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -14,13 +13,13 @@ import { Field, replaceSwapState, selectCurrency, setRecipient, switchCurrencies
 import { SwapState } from './reducer'
 import { w3ComputeSlippageAdjustedAmounts } from '../../utils/prices'
 import { W3Pair, W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
-import { reverseMapToken } from '../../web3api/mapping'
 import Decimal from 'decimal.js-light'
 import { isEther } from '../../web3api/utils'
 import useENS from '../../hooks/useENS'
 import { useUserSlippageTolerance } from '../user/hooks'
 import { Web3ApiClient } from '@web3api/client-js'
 import { useWeb3ApiClient } from '@web3api/react'
+import { w3PairAddress } from '../../web3api/tradeWrappers'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
@@ -104,18 +103,31 @@ const BAD_RECIPIENT_ADDRESSES: string[] = [
  * @param trade to check for the given address
  * @param checksummedAddress address to check in the pairs and tokens
  */
-// TODO add liquidity token to pair?
-function involvesAddress(trade: W3Trade, checksummedAddress: string): boolean {
-  const getAddress = (pair: W3Pair) => {
-    return Pair.getAddress(
-      reverseMapToken(pair.tokenAmount0.token) as Token,
-      reverseMapToken(pair.tokenAmount1.token) as Token
-    )
+
+async function involvesAddress(client: Web3ApiClient, trade: W3Trade, checksummedAddress: string): Promise<boolean> {
+  // const getAddress = (pair: W3Pair) => {
+  //   return Pair.getAddress(
+  //     reverseMapToken(pair.tokenAmount0.token) as Token,
+  //     reverseMapToken(pair.tokenAmount1.token) as Token
+  //   )
+  // }
+  // return (
+  //   trade.route.path.some(token => token.address === checksummedAddress) ||
+  //   trade.route.pairs.some(pair => getAddress(pair) === checksummedAddress)
+  // )
+  const getAddress = async (pair: W3Pair) => {
+    return w3PairAddress(client, pair.tokenAmount0.token, pair.tokenAmount1.token)
   }
-  return (
-    trade.route.path.some(token => token.address === checksummedAddress) ||
-    trade.route.pairs.some(pair => getAddress(pair) === checksummedAddress)
-  )
+  const isTokenAddress: boolean = trade.route.path.some(token => token.address === checksummedAddress)
+  if (isTokenAddress) {
+    return isTokenAddress
+  }
+  for (const pair of trade.route.pairs) {
+    if ((await getAddress(pair)) === checksummedAddress) {
+      return true
+    }
+  }
+  return false
 }
 
 // check swap inputs for errors
@@ -149,7 +161,10 @@ export async function validateSwapInput(
   if (!to || !formattedTo) {
     inputError = inputError ?? 'Enter a recipient'
   } else {
-    if (BAD_RECIPIENT_ADDRESSES.indexOf(formattedTo) !== -1 || (v2Trade && involvesAddress(v2Trade, formattedTo))) {
+    if (
+      BAD_RECIPIENT_ADDRESSES.indexOf(formattedTo) !== -1 ||
+      (v2Trade && (await involvesAddress(client, v2Trade, formattedTo)))
+    ) {
       inputError = inputError ?? 'Invalid recipient'
     }
   }

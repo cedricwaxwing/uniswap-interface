@@ -99,7 +99,7 @@ function TransactionSubmittedContent({
           <Text fontWeight={500} fontSize={20}>
             Transaction Submitted
           </Text>
-          {chainId && hash && (
+          {chainId !== undefined && hash && (
             <ExternalLink href={getEtherscanLink(reverseMapChainId(chainId), hash, 'transaction')}>
               <Text fontWeight={500} fontSize={14} color={theme.primary1}>
                 View on Etherscan

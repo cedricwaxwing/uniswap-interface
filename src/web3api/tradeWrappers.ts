@@ -13,6 +13,7 @@ import {
 import { ipfsUri } from './constants'
 import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
+import { chainIdToName } from './utils'
 
 export async function w3TradeExecutionPrice(client: Web3ApiClient, trade: W3Trade): Promise<Decimal> {
   const query = await client.query<{
@@ -250,7 +251,7 @@ export async function w3ExecCall(
        }`,
     variables: {
       parameters: parameters,
-      chainId: chainId,
+      chainId: chainIdToName(chainId),
       txOverrides: txOverrides ?? null
     }
   })
@@ -275,14 +276,14 @@ export async function w3EstimateGas(
   }>({
     uri: ipfsUri,
     query: `query {
-        estimateGas(
-          parameters: $parameters
-          chainId: $chainId
-         )
-       }`,
+      estimateGas(
+        parameters: $parameters
+        chainId: $chainId
+       )
+     }`,
     variables: {
       parameters: parameters,
-      chainId: chainId
+      chainId: chainIdToName(chainId)
     }
   })
   const result: string | undefined = query.data?.estimateGas
@@ -313,7 +314,7 @@ export async function w3ExecCallStatic(
        }`,
     variables: {
       parameters: parameters,
-      chainId: chainId
+      chainId: chainIdToName(chainId)
     }
   })
   const result: string | undefined = query.data?.execCallStatic
@@ -351,6 +352,35 @@ export async function w3Approve(
     }
   })
   const result: W3TxReceipt | undefined = query.data?.approve
+  if (result === undefined) {
+    if (query.errors) {
+      throw Error(query.errors.map(e => e.message).toString())
+    } else {
+      throw Error('Unknown Web3API query error; query result data is undefined')
+    }
+  }
+  return result
+}
+
+export async function w3PairAddress(client: Web3ApiClient, token0: W3Token, token1: W3Token): Promise<string> {
+  const query = await client.query<{
+    pairAddress: string
+  }>({
+    uri: ipfsUri,
+    query: `
+        query {
+          pairAddress(
+            token0: $token0
+            token1: $token1
+          )
+        }
+      `,
+    variables: {
+      token0: token0,
+      token1: token1
+    }
+  })
+  const result: string | undefined = query.data?.pairAddress
   if (result === undefined) {
     if (query.errors) {
       throw Error(query.errors.map(e => e.message).toString())
