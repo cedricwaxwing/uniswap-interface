@@ -197,6 +197,12 @@ export const UniTokenAnimated = styled.img`
   filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.15));
 `
 
+export const W3LogoAnimated = styled.img`
+  animation: ${rotateImg} 3s cubic-bezier(0.83, 0, 0.17, 1) infinite;
+  padding: 2rem 0 0 0;
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.15));
+`
+
 /**
  * Outbound link that handles firing google analytics events
  */
