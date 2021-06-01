@@ -10,6 +10,7 @@ import { UriRedirect } from '@web3api/client-js'
 import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 import { Web3ApiProvider } from '@web3api/react'
 import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
+import { sha3Plugin } from '@web3api/sha3-plugin-js'
 
 const MessageWrapper = styled.div`
   display: flex;
@@ -66,6 +67,10 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
       to: ipfsPlugin({
         provider: 'https://ipfs.io'
       })
+    },
+    {
+      from: 'w3://ens/sha3.web3api.eth',
+      to: sha3Plugin()
     }
   ]
 
