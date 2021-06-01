@@ -19,8 +19,7 @@ import useENS from '../../hooks/useENS'
 import { useUserSlippageTolerance } from '../user/hooks'
 import { Web3ApiClient } from '@web3api/client-js'
 import { useWeb3ApiClient } from '@web3api/react'
-import { Pair, Token } from '@uniswap/sdk'
-import { reverseMapToken } from '../../web3api/mapping'
+import { w3PairAddress } from '../../web3api/tradeWrappers'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
@@ -99,40 +98,39 @@ const BAD_RECIPIENT_ADDRESSES: string[] = [
   '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D' // v2 router 02
 ]
 
-/**
- * Returns true if any of the pairs or tokens in a trade have the given checksummed address
- * @param trade to check for the given address
- * @param checksummedAddress address to check in the pairs and tokens
- */
-
-// async function w3InvolvesAddress(client: Web3ApiClient, trade: W3Trade, checksummedAddress: string): Promise<boolean> {
-//   const getAddress = async (pair: W3Pair) => {
-//     return w3PairAddress(client, pair.tokenAmount0.token, pair.tokenAmount1.token)
-//   }
-//   const isTokenAddress: boolean = trade.route.path.some(token => token.address === checksummedAddress)
-//   if (isTokenAddress) {
-//     return isTokenAddress
-//   }
-//   for (const pair of trade.route.pairs) {
-//     if ((await getAddress(pair)) === checksummedAddress) {
-//       return true
-//     }
-//   }
-//   return false
-// }
-
-function involvesAddress(trade: W3Trade, checksummedAddress: string): boolean {
-  const getAddress = (pair: W3Pair) => {
-    return Pair.getAddress(
-      reverseMapToken(pair.tokenAmount0.token) as Token,
-      reverseMapToken(pair.tokenAmount1.token) as Token
-    )
+async function w3InvolvesAddress(client: Web3ApiClient, trade: W3Trade, checksummedAddress: string): Promise<boolean> {
+  const getAddress = async (pair: W3Pair) => {
+    return w3PairAddress(client, pair.tokenAmount0.token, pair.tokenAmount1.token)
   }
-  return (
-    trade.route.path.some(token => token.address === checksummedAddress) ||
-    trade.route.pairs.some(pair => getAddress(pair) === checksummedAddress)
-  )
+  const isTokenAddress: boolean = trade.route.path.some(token => token.address === checksummedAddress)
+  if (isTokenAddress) {
+    return isTokenAddress
+  }
+  for (const pair of trade.route.pairs) {
+    if ((await getAddress(pair)) === checksummedAddress) {
+      return true
+    }
+  }
+  return false
 }
+
+// /**
+//  * Returns true if any of the pairs or tokens in a trade have the given checksummed address
+//  * @param trade to check for the given address
+//  * @param checksummedAddress address to check in the pairs and tokens
+//  */
+// export function involvesAddress(trade: W3Trade, checksummedAddress: string): boolean {
+//   const getAddress = (pair: W3Pair) => {
+//     return Pair.getAddress(
+//       reverseMapToken(pair.tokenAmount0.token) as Token,
+//       reverseMapToken(pair.tokenAmount1.token) as Token
+//     )
+//   }
+//   return (
+//     trade.route.path.some(token => token.address === checksummedAddress) ||
+//     trade.route.pairs.some(pair => getAddress(pair) === checksummedAddress)
+//   )
+// }
 
 // check swap inputs for errors
 // formerly part of useDerivedSwapInfo()
@@ -167,7 +165,7 @@ export async function validateSwapInput(
   } else {
     if (
       BAD_RECIPIENT_ADDRESSES.indexOf(formattedTo) !== -1 ||
-      (v2Trade && (await involvesAddress(v2Trade, formattedTo)))
+      (v2Trade && (await w3InvolvesAddress(client, v2Trade, formattedTo)))
     ) {
       inputError = inputError ?? 'Invalid recipient'
     }

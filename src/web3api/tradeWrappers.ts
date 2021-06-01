@@ -252,7 +252,7 @@ export async function w3ExecCall(
     variables: {
       parameters: parameters,
       chainId: chainIdToName(chainId),
-      txOverrides: txOverrides ?? null
+      txOverrides: txOverrides ?? { gasLimit: null, gasPrice: null }
     }
   })
   const result: W3TxReceipt | undefined = query.data?.execCall
@@ -289,6 +289,7 @@ export async function w3EstimateGas(
   const result: string | undefined = query.data?.estimateGas
   if (!result) {
     if (query.errors) {
+      console.log(query.errors.map(e => e.message).toString())
       throw Error(query.errors.map(e => e.message).toString())
     } else {
       throw Error('Unknown Web3API query error; query result data is undefined')
@@ -341,19 +342,21 @@ export async function w3Approve(
     query: `mutation {
         approve(
           token: $token
-          amountToApprove: $amountToApprove
-          txOverrides: $txOverrides
+          amount: $amount
+          txOverrides: $overrides
          )
        }`,
     variables: {
       token: token,
-      amountToApprove: amountToApprove ?? null,
-      txOverrides: txOverrides ?? null
+      amount: amountToApprove ?? '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+      overrides: txOverrides ?? { gasPrice: null, gasLimit: null }
     }
   })
   const result: W3TxReceipt | undefined = query.data?.approve
   if (result === undefined) {
     if (query.errors) {
+      console.log(amountToApprove)
+      console.log(JSON.stringify(txOverrides))
       throw Error(query.errors.map(e => e.message).toString())
     } else {
       throw Error('Unknown Web3API query error; query result data is undefined')
