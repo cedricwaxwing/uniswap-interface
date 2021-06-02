@@ -97,7 +97,7 @@ Web3Api.query({
   const tradeOptions = {
     allowedSlippage: ${slippage}
     recipient: ${recipient}
-    unixTimestamp: ${Date.now()}
+    unixTimestamp: ${'1622664382250'}
   }
   `
 
@@ -118,26 +118,56 @@ Web3Api.query({
   const chainId: ${currencies.INPUT?.chainId}
   `
 
-  const [query, setQuery] = useState<String | null>(null)
-  const [variables, setVariables] = useState<String | null>(null)
+  // const [query, setQuery] = useState<String | null>(null)
+  // const [variables, setVariables] = useState<String | null>(null)
+  const [queryName, setQueryName] = useState<String | null>(null)
 
   const queryAHandler = () => {
-    setQuery(queryA)
-    setVariables(variablesA)
+    setQueryName('A')
     setToggle(true)
   }
 
   const queryBHandler = () => {
-    setQuery(queryB)
-    setVariables(variablesB)
+    setQueryName('B')
     setToggle(true)
   }
 
   const queryCHandler = () => {
-    setQuery(queryC)
-    setVariables(variablesC)
+    setQueryName('C')
     setToggle(true)
   }
+
+  // let displayCode
+
+  // const displayCodeFunction = () => {
+  //   if (queryName === 'A') {
+  //     displayCode = (
+  //       <CodeWrapper className="codeBlock__code">
+  //         <pre className="line-numbers">
+  //           <code className="language-js">{toggle ? queryA : variablesA}</code>
+  //         </pre>
+  //       </CodeWrapper>
+  //     )
+  //     if (queryName === 'B') {
+  //       displayCode = (
+  //         <CodeWrapper className="codeBlock__code">
+  //           <pre className="line-numbers">
+  //             <code className="language-js">{toggle ? queryB : variablesB}</code>
+  //           </pre>
+  //         </CodeWrapper>
+  //       )
+  //       if (queryName === 'C') {
+  //         displayCode = (
+  //           <CodeWrapper className="codeBlock__code">
+  //             <pre className="line-numbers">
+  //               <code className="language-js">{toggle ? queryC : variablesC}</code>
+  //             </pre>
+  //           </CodeWrapper>
+  //         )
+  //       }
+  //     }
+  //   }
+  // }
 
   return (
     <>
@@ -165,11 +195,27 @@ Web3Api.query({
         <Flex className="codeBlock__toggle">
           <CodeToggle id="toggle-expert-mode-button" isActive={toggle} toggle={() => setToggle(!toggle)} />
         </Flex>
-        <CodeWrapper className="codeBlock__code">
-          <pre className="line-numbers">
-            <code className="language-js">{toggle ? query : variables}</code>
-          </pre>
-        </CodeWrapper>
+        {queryName === 'A' && (
+          <CodeWrapper className="codeBlock__code">
+            <pre className="line-numbers">
+              <code className="language-js">{toggle ? queryA : variablesA}</code>
+            </pre>
+          </CodeWrapper>
+        )}
+        {queryName === 'B' && (
+          <CodeWrapper className="codeBlock__code">
+            <pre className="line-numbers">
+              <code className="language-js">{toggle ? queryB : variablesB}</code>
+            </pre>
+          </CodeWrapper>
+        )}
+        {queryName === 'C' && (
+          <CodeWrapper className="codeBlock__code">
+            <pre className="line-numbers">
+              <code className="language-js">{toggle ? queryC : variablesC}</code>
+            </pre>
+          </CodeWrapper>
+        )}
       </Flex>
     </>
   )
