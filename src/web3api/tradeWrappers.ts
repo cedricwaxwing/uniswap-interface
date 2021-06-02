@@ -355,8 +355,6 @@ export async function w3Approve(
   const result: W3TxReceipt | undefined = query.data?.approve
   if (result === undefined) {
     if (query.errors) {
-      console.log(amountToApprove)
-      console.log(JSON.stringify(txOverrides))
       throw Error(query.errors.map(e => e.message).toString())
     } else {
       throw Error('Unknown Web3API query error; query result data is undefined')

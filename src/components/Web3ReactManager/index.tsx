@@ -31,10 +31,11 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
   const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
 
   // Web3API integration.
-  const [ethConfig, setEthConfig] = useState<{ provider: Web3Provider; signer: JsonRpcSigner | undefined }>({
-    provider: library as Web3Provider,
+  const [ethConfig, setEthConfig] = useState<{ provider: Web3Provider | string; signer: JsonRpcSigner | undefined }>({
+    provider: (library as Web3Provider) ?? network.provider.url,
     signer: account ? getSigner(library, account) : undefined
   })
+  console.log(network.provider.url)
   const redirects: UriRedirect[] = [
     {
       from: 'ens/ethereum.web3api.eth',
@@ -85,7 +86,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
       activateNetwork(network)
     }
     setEthConfig({
-      provider: library as Web3Provider,
+      provider: (library as Web3Provider) ?? network.provider.url,
       signer: account ? getSigner(library, account) : undefined
     })
   }, [triedEager, networkActive, networkError, activateNetwork, active, account, library])
