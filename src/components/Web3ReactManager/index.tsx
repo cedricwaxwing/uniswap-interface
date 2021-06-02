@@ -13,6 +13,7 @@ import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
 import { sha3Plugin } from '@web3api/sha3-plugin-js'
 import { JsonRpcSigner, Web3Provider } from '@ethersproject/providers'
 import { getSigner } from '../../utils'
+import { ethers } from 'ethers'
 
 const MessageWrapper = styled.div`
   display: flex;
@@ -32,7 +33,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
 
   // Web3API integration.
   const [ethConfig, setEthConfig] = useState<{ provider: Web3Provider | string; signer: JsonRpcSigner | undefined }>({
-    provider: (library as Web3Provider) ?? network.provider.url,
+    provider: (library as Web3Provider) ?? network.provider.url ?? ethers.getDefaultProvider(),
     signer: account ? getSigner(library, account) : undefined
   })
   console.log(network.provider.url)
@@ -86,7 +87,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
       activateNetwork(network)
     }
     setEthConfig({
-      provider: (library as Web3Provider) ?? network.provider.url,
+      provider: (library as Web3Provider) ?? network.provider.url ?? ethers.getDefaultProvider(),
       signer: account ? getSigner(library, account) : undefined
     })
   }, [triedEager, networkActive, networkError, activateNetwork, active, account, library])
