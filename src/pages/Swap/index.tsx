@@ -541,7 +541,13 @@ export default function Swap({ history }: RouteComponentProps) {
             </BottomGrouping>
           </Wrapper>
         </AppBody>
-        <Codeblock input={formattedAmounts[Field.INPUT]} currencies={currencies} />
+        <Codeblock
+          input={formattedAmounts[Field.INPUT]}
+          currencies={currencies}
+          slippage={allowedSlippage}
+          recipient={recipient}
+          output={formattedAmounts[Field.OUTPUT]}
+        />
       </Flex>
       {!swapIsUnsupported ? (
         <AdvancedSwapDetailsDropdown trade={trade} />

@@ -130,6 +130,24 @@ pre[class*='language-'] {
   align-items: center;
 }
 
+.codeBlock__select {
+  padding: 0 0 2rem 0;
+  margin-top: -4.5rem !important;
+  justify-content: space-around;
+  width: 100%;
+}
+
+.codeBlock__btnContainer {
+  align-items: center;
+  z-index: 1000;
+}
+
+.codeBlock__btn {
+  height: 2rem;
+  font-size: 0.8rem;
+  width: 10rem;
+}
+
 .codeBlock__toggle {
   z-index: 1000;
   width: 100%;
