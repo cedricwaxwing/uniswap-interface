@@ -36,7 +36,7 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
     provider: (library as Web3Provider) ?? network.provider.url ?? ethers.getDefaultProvider(),
     signer: account ? getSigner(library, account) : undefined
   })
-  console.log(network.provider.url)
+
   const redirects: UriRedirect[] = [
     {
       from: 'ens/ethereum.web3api.eth',
