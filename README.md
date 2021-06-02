@@ -4,10 +4,10 @@
 [![Tests](https://github.com/Uniswap/uniswap-interface/workflows/Tests/badge.svg)](https://github.com/Uniswap/uniswap-interface/actions?query=workflow%3ATests)
 [![Styled With Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
 
-An open source interface for Demoing Uniswap v2's Web3API.
+An open source interface for Demoing Uniswap v2's Web3API, co-sponsored by the Uniswap Grants Program and Web3API DAO.
 
 - Websites: [web3api.dev](https://web3api.dev/) & [uniswap.org](https://uniswap.org/)
-- Docs: [uniswap.org/docs/](https://docs.web3api.dev/)
+- Docs: [uniswap.org/docs/](https://docs.web3api.dev/) #TODO:  link to the right section of the docs
 - Twitter:  [@Web3API](https://twitter.com/Web3API) & [@UniswapProtocol](https://twitter.com/UniswapProtocol)
 - Discord: [Web3API](https://discord.gg/BWScMpuTB4) & [Uniswap](https://discord.gg/FCfyBSbCU5)
 - Technical Specification: [Link](#TODO)
@@ -50,8 +50,6 @@ The interface will not work on other networks.
 **Please open all pull requests against the `main` branch.** 
 CI checks will run against all PRs.
 
-## Accessing Uniswap Interface V1
+## Disclaimer
 
-The Uniswap Interface supports swapping against, and migrating or removing liquidity from Uniswap V1. However,
-if you would like to use Uniswap V1, the Uniswap V1 interface for mainnet and testnets is accessible via IPFS gateways 
-linked from the [v1.0.0 release](https://github.com/Uniswap/uniswap-interface/releases/tag/v1.0.0).
+While the wrapper that was developed for v2 covers all of the functions from the official JS SDK, this version of the Uniswap v2 Interface only supports swapping for demonstration purposes. 
