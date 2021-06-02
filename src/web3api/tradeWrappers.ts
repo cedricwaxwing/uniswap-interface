@@ -369,13 +369,13 @@ export async function w3PairAddress(client: Web3ApiClient, token0: W3Token, toke
   }>({
     uri: ipfsUri,
     query: `
-        query {
-          pairAddress(
-            token0: $token0
-            token1: $token1
-          )
-        }
-      `,
+      query {
+        pairAddress(
+          token0: $token0
+          token1: $token1
+        )
+      }
+    `,
     variables: {
       token0: token0,
       token1: token1

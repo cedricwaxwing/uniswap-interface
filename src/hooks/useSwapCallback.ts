@@ -99,7 +99,12 @@ export function useSwapCallback(
   trade: W3Trade | undefined, // trade to execute, required
   allowedSlippage: number = INITIAL_ALLOWED_SLIPPAGE, // in bips
   recipientAddressOrName: string | null // the ENS name or address of the recipient of the trade, or null if swap should be returned to sender
-): { state: SwapCallbackState; callback: null | (() => Promise<string>); error: string | null } {
+): {
+  callParameters?: Promise<W3SwapParameters>
+  state: SwapCallbackState
+  callback: null | (() => Promise<string>)
+  error: string | null
+} {
   const { account, chainId, library } = useActiveWeb3React()
 
   const client: Web3ApiClient = useWeb3ApiClient()
@@ -124,6 +129,7 @@ export function useSwapCallback(
     }
 
     return {
+      callParameters: swapCalls.length > 0 ? swapCalls[0].parameters : undefined,
       state: SwapCallbackState.VALID,
       callback: async function onSwap(): Promise<string> {
         const estimatedCalls: EstimatedSwapCall[] = await Promise.all(
