@@ -1,25 +1,18 @@
 import { ChainId, TokenAmount } from '@uniswap/sdk'
 import React, { useState } from 'react'
-import { Text } from 'rebass'
+import { Image, Text } from 'rebass'
 import { NavLink } from 'react-router-dom'
 import { darken } from 'polished'
 import { useTranslation } from 'react-i18next'
-
 import styled from 'styled-components'
-
-import Logo from '../../assets/svg/logo.svg'
+import W3Logo from '../../assets/images/web3api-logo.png'
 import LogoDark from '../../assets/svg/logo_white.svg'
 import { useActiveWeb3React } from '../../hooks'
-import { useDarkModeManager } from '../../state/user/hooks'
 import { useETHBalances, useAggregateUniBalance } from '../../state/wallet/hooks'
 import { CardNoise } from '../earn/styled'
 import { CountUp } from 'use-count-up'
 import { TYPE, ExternalLink } from '../../theme'
-
 import { YellowCard } from '../Card'
-import { Moon, Sun } from 'react-feather'
-import Menu from '../Menu'
-
 import Row, { RowFixed } from '../Row'
 import Web3Status from '../Web3Status'
 import ClaimModal from '../claim/ClaimModal'
@@ -45,6 +38,7 @@ const HeaderFrame = styled.div`
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   padding: 1rem;
   z-index: 2;
+  margin-left: 1.5rem;
   ${({ theme }) => theme.mediaWidth.upToMedium`
     grid-template-columns: 1fr;
     padding: 0 1rem;
@@ -96,11 +90,6 @@ const HeaderElement = styled.div`
   `};
 `
 
-const HeaderElementWrap = styled.div`
-  display: flex;
-  align-items: center;
-`
-
 const HeaderRow = styled(RowFixed)`
   ${({ theme }) => theme.mediaWidth.upToMedium`
    width: 100%;
@@ -130,7 +119,9 @@ const AccountElement = styled.div<{ active: boolean }>`
   }
 `
 
+// Not displaying UNI amount in Web3API demo.
 const UNIAmount = styled(AccountElement)`
+  display: none;
   color: white;
   padding: 4px 8px;
   height: 36px;
@@ -192,13 +183,6 @@ const Title = styled.a`
   }
 `
 
-const UniIcon = styled.div`
-  transition: transform 0.3s ease;
-  :hover {
-    transform: rotate(-5deg);
-  }
-`
-
 const activeClassName = 'ACTIVE'
 
 const StyledNavLink = styled(NavLink).attrs({
@@ -231,7 +215,7 @@ const StyledNavLink = styled(NavLink).attrs({
 const StyledExternalLink = styled(ExternalLink).attrs({
   activeClassName
 })<{ isActive?: boolean }>`
-  ${({ theme }) => theme.flexRowNoWrap}
+  // ${({ theme }) => theme.flexRowNoWrap}
   align-items: left;
   border-radius: 3rem;
   outline: none;
@@ -301,8 +285,6 @@ export default function Header() {
 
   const w3userEthBalance = useETHBalances(account ? [account] : [])?.[account ?? '']
   const userEthBalance = reverseMapTokenAmount(w3userEthBalance)
-  // const [isDark] = useDarkModeManager()
-  const [darkMode, toggleDarkMode] = useDarkModeManager()
 
   const toggleClaimModal = useToggleSelfClaimModal()
 
@@ -326,36 +308,18 @@ export default function Header() {
         <UniBalanceContent setShowUniBalanceModal={setShowUniBalanceModal} />
       </Modal>
       <HeaderRow>
-        <Title href=".">
-          <UniIcon>
-            <img width={'24px'} src={darkMode ? LogoDark : Logo} alt="logo" />
-          </UniIcon>
-        </Title>
+        <Image sx={{ width: '5.5rem', marginLeft: '1rem' }} src={W3Logo} />
+        <Image sx={{ width: '4.5rem', marginLeft: '1rem' }} src={LogoDark} />
+        <Title href="."></Title>
         <HeaderLinks>
           <StyledNavLink id={`swap-nav-link`} to={'/swap'}>
-            {t('swap')}
+            {t('Uni v2 Web3API Demo')}
           </StyledNavLink>
-          <StyledNavLink
-            id={`pool-nav-link`}
-            to={'/pool'}
-            isActive={(match, { pathname }) =>
-              Boolean(match) ||
-              pathname.startsWith('/add') ||
-              pathname.startsWith('/remove') ||
-              pathname.startsWith('/create') ||
-              pathname.startsWith('/find')
-            }
-          >
-            {t('pool')}
+          <StyledNavLink id={`howitworks-nav-link`} to={'/howitworks'}>
+            {t('How It Works')}
           </StyledNavLink>
-          <StyledNavLink id={`stake-nav-link`} to={'/uni'}>
-            UNI
-          </StyledNavLink>
-          <StyledNavLink id={`stake-nav-link`} to={'/vote'}>
-            Vote
-          </StyledNavLink>
-          <StyledExternalLink id={`stake-nav-link`} href={'https://uniswap.info'}>
-            Charts <span style={{ fontSize: '11px' }}>↗</span>
+          <StyledExternalLink id={`stake-nav-link`} href={'https://docs.web3api.dev'}>
+            Documentation <span style={{ fontSize: '11px' }}>↗</span>
           </StyledExternalLink>
         </HeaderLinks>
       </HeaderRow>
@@ -411,12 +375,6 @@ export default function Header() {
             <Web3Status />
           </AccountElement>
         </HeaderElement>
-        <HeaderElementWrap>
-          <StyledMenuButton onClick={() => toggleDarkMode()}>
-            {darkMode ? <Moon size={20} /> : <Sun size={20} />}
-          </StyledMenuButton>
-          <Menu />
-        </HeaderElementWrap>
       </HeaderControls>
     </HeaderFrame>
   )

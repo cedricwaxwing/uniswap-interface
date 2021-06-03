@@ -63,6 +63,7 @@
     "node-vibrant": "^3.1.5",
     "polished": "^3.3.2",
     "prettier": "^1.17.0",
+    "prismjs": "^1.23.0",
     "qs": "^6.9.4",
     "react": "^16.13.1",
     "react-confetti": "^6.0.0",
@@ -128,6 +129,7 @@
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
+    "@types/prismjs": "^1.16.5",
     "@uniswap/default-token-list": "^2.0.0",
     "@web3api/client-js": "^0.0.1-prealpha.24",
     "@web3api/ethereum-plugin-js": "file:/home/kris/WebstormProjects/Web3-API/monorepo/packages/js/plugins/ethereum",
