@@ -137,38 +137,6 @@ Web3Api.query({
     setToggle(true)
   }
 
-  // let displayCode
-
-  // const displayCodeFunction = () => {
-  //   if (queryName === 'A') {
-  //     displayCode = (
-  //       <CodeWrapper className="codeBlock__code">
-  //         <pre className="line-numbers">
-  //           <code className="language-js">{toggle ? queryA : variablesA}</code>
-  //         </pre>
-  //       </CodeWrapper>
-  //     )
-  //     if (queryName === 'B') {
-  //       displayCode = (
-  //         <CodeWrapper className="codeBlock__code">
-  //           <pre className="line-numbers">
-  //             <code className="language-js">{toggle ? queryB : variablesB}</code>
-  //           </pre>
-  //         </CodeWrapper>
-  //       )
-  //       if (queryName === 'C') {
-  //         displayCode = (
-  //           <CodeWrapper className="codeBlock__code">
-  //             <pre className="line-numbers">
-  //               <code className="language-js">{toggle ? queryC : variablesC}</code>
-  //             </pre>
-  //           </CodeWrapper>
-  //         )
-  //       }
-  //     }
-  //   }
-  // }
-
   return (
     <>
       <Flex className="codeBlock">
@@ -183,13 +151,13 @@ Web3Api.query({
             <ButtonLight onClick={queryBHandler} className="codeBlock__btn">
               swapCallParameters
             </ButtonLight>
-            <W3ToolTip text="" />
+            <W3ToolTip text="swapCallParameters accepts a Trade and a set of trade options as input. It transforms the trade into parameter values that can later be used to submit an Ethereum transaction that will execute the trade in Uniswap's smart contracts." />
           </Flex>
           <Flex className="codeBlock__btnContainer">
             <ButtonLight onClick={queryCHandler} className="codeBlock__btn">
               execCall
             </ButtonLight>
-            <W3ToolTip text="" />
+            <W3ToolTip text="Using the output of swapCallParameters, execCall submits an Ethereum transaction and returns the transaction hash that uniquely identifies it on the Ethereum blockchain." />
           </Flex>
         </Flex>
         <Flex className="codeBlock__toggle">
