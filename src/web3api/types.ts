@@ -81,6 +81,10 @@ export interface W3Log {
   logIndex: number
 }
 
+export interface W3TxResponse {
+  hash: string
+}
+
 export interface W3TxReceipt {
   // to: string
   // from: string

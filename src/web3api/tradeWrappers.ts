@@ -8,7 +8,7 @@ import {
   W3Trade,
   W3TradeOptions,
   W3TxOverrides,
-  W3TxReceipt
+  W3TxResponse
 } from './types'
 import { ipfsUri } from './constants'
 import Decimal from 'decimal.js'
@@ -186,11 +186,11 @@ export async function w3SwapCallParameters(
   }>({
     uri: ipfsUri,
     query: `query {
-        swapCallParameters(
-          trade: $trade
-          tradeOptions: $tradeOptions
-         )
-       }`,
+      swapCallParameters(
+        trade: $trade
+        tradeOptions: $tradeOptions
+       )
+     }`,
     variables: {
       trade: trade,
       tradeOptions: tradeOptions
@@ -237,27 +237,30 @@ export async function w3ExecCall(
   parameters: W3SwapParameters,
   chainId: W3ChainId,
   txOverrides?: W3TxOverrides
-): Promise<W3TxReceipt> {
+): Promise<W3TxResponse> {
   const query = await client.query<{
-    execCall: W3TxReceipt
+    execCall: W3TxResponse
   }>({
     uri: ipfsUri,
     query: `mutation {
-        execCall(
-          parameters: $parameters
-          chainId: $chainId
-          txOverrides: $txOverrides
-         )
-       }`,
+      execCall(
+        parameters: $parameters
+        chainId: $chainId
+        txOverrides: $txOverrides
+       )
+     }`,
     variables: {
       parameters: parameters,
       chainId: chainIdToName(chainId),
       txOverrides: txOverrides ?? { gasLimit: null, gasPrice: null }
     }
   })
-  const result: W3TxReceipt | undefined = query.data?.execCall
+  const result: W3TxResponse | undefined = query.data?.execCall
   if (!result) {
     if (query.errors) {
+      console.log(JSON.stringify(parameters))
+      console.log(chainId)
+      console.log(txOverrides)
       throw Error(query.errors.map(e => e.message).toString())
     } else {
       throw Error('Unknown Web3API query error; query result data is undefined')
@@ -334,9 +337,9 @@ export async function w3Approve(
   token: W3Token,
   amountToApprove?: string,
   txOverrides?: W3TxOverrides
-): Promise<W3TxReceipt> {
+): Promise<W3TxResponse> {
   const query = await client.query<{
-    approve: W3TxReceipt
+    approve: W3TxResponse
   }>({
     uri: ipfsUri,
     query: `mutation {
@@ -352,7 +355,7 @@ export async function w3Approve(
       overrides: txOverrides ?? { gasPrice: null, gasLimit: null }
     }
   })
-  const result: W3TxReceipt | undefined = query.data?.approve
+  const result: W3TxResponse | undefined = query.data?.approve
   if (result === undefined) {
     if (query.errors) {
       throw Error(query.errors.map(e => e.message).toString())

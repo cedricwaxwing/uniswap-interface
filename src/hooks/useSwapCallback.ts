@@ -5,7 +5,7 @@ import { calculateGasMargin, isAddress, shortenAddress } from '../utils'
 import { useActiveWeb3React } from './index'
 import useTransactionDeadline from './useTransactionDeadline'
 import useENS from './useENS'
-import { W3ChainId, W3SwapParameters, W3Trade, W3TradeType, W3TxReceipt } from '../web3api/types'
+import { W3ChainId, W3SwapParameters, W3Trade, W3TradeType, W3TxResponse } from '../web3api/types'
 import { w3EstimateGas, w3ExecCall, w3ExecCallStatic, w3SwapCallParameters } from '../web3api/tradeWrappers'
 import Decimal from 'decimal.js'
 import { toSignificant } from '../web3api/utils'
@@ -191,7 +191,7 @@ export function useSwapCallback(
         const gasMargin = calculateGasMargin(BigNumber.from(gasEstimate))
 
         return w3ExecCall(client, parameters, chainId, { gasLimit: gasMargin.toString(), gasPrice: null })
-          .then((receipt: W3TxReceipt) => {
+          .then((response: W3TxResponse) => {
             const inputSymbol = trade.inputAmount.token.currency.symbol
             const outputSymbol = trade.outputAmount.token.currency.symbol
             const inputAmount = toSignificant(trade.inputAmount, 3)
@@ -207,11 +207,11 @@ export function useSwapCallback(
                       : recipientAddressOrName
                   }`
 
-            addTransaction(receipt, {
+            addTransaction(response, {
               summary: withRecipient
             })
 
-            return receipt.transactionHash
+            return response.hash
           })
           .catch((error: any) => {
             // if the user rejected the tx, pass this along

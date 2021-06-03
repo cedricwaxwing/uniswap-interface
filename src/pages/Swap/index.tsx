@@ -218,7 +218,7 @@ export default function Swap({ history }: RouteComponentProps) {
   )
 
   // the callback to execute the swap
-  const { callback: swapCallback, error: swapCallbackError, callParameters: swapCallParameters } = useSwapCallback(
+  const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(
     trade,
     allowedSlippage,
     recipient
