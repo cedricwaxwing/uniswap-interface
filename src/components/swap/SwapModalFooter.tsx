@@ -58,7 +58,7 @@ export default function SwapModalFooter({
       setFormattedExecutionPrice(formattedExecutionPrice)
     }
     updateStateAsync()
-  }, [trade, allowedSlippage, showInverted, client])
+  }, [trade, allowedSlippage, showInverted])
 
   const severity = warningSeverity(priceImpactWithoutFee)
 
