@@ -169,7 +169,7 @@ export async function validateSwapInput(
   if (!to || !formattedTo) {
     inputError = inputError ?? 'Enter a recipient'
   } else {
-    if (BAD_RECIPIENT_ADDRESSES.indexOf(formattedTo) !== -1 || (v2Trade && involvesAddress(v2Trade, formattedTo))) {
+    if (BAD_RECIPIENT_ADDRESSES.indexOf(formattedTo) !== -1 || (v2Trade && await w3InvolvesAddress(client, v2Trade, formattedTo))) {
       inputError = inputError ?? 'Invalid recipient'
     }
   }
