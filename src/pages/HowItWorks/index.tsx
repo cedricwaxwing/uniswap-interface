@@ -54,11 +54,12 @@ export default function HowItWorks() {
         </Text>
         <Flex className="steps__container">
           <Flex className="steps__textContainer">
-            <Text className="steps__heading">At vero eos et accusamus et iusto odio dignissimos</Text>
+            <Text className="steps__heading">Downloading Web3API package from IPFS</Text>
             <Text className="steps__text">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-              dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
-              ea commodo consequat.
+              The first step to integrate Web3API into any dapp is to install it as a dependency and then initializing
+              the Web3APIClient. Rather than bundling business logic into your app with a JS SDK, the Web3API package is
+              deployed to a decentralized endpoint like IPFS. The Web3API client downloads this package at runtime and
+              instantiates the wasm modules containing the protocol business logic.
             </Text>
           </Flex>
           <OutlineCard className="steps__visual">
@@ -67,30 +68,28 @@ export default function HowItWorks() {
         </Flex>
         <Flex className="steps__container">
           <Flex className="steps__textContainer">
-            <Text className="steps__heading">At vero eos et accusamus et iusto odio dignissimos</Text>
+            <Text className="steps__heading">WebAssembly</Text>
             <Text className="steps__text">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-              dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
-              ea commodo consequat.
+              We implemented the Uni v2 business logic using a language called AssemblyScript. AssemblyScript compiles
+              to WebAssembly modules which will have the functions that the dapp needs in order to perform swaps.
+            </Text>
+          </Flex>
+          <OutlineCard className="steps__visual">
+            <Image src={WasmLogo} style={{ maxWidth: '7rem' }} />
+          </OutlineCard>
+        </Flex>
+        <Flex className="steps__container">
+          <Flex className="steps__textContainer">
+            <Text className="steps__heading">GraphQL</Text>
+            <Text className="steps__text">
+              With a Web3API-enabled dapp, you can send GraphQL queries to invoke functions made available by the wasm
+              modules.
             </Text>
           </Flex>
           <OutlineCard className="steps__code">
             <pre className="line-numbers">
               <code className="language-js">{query}</code>
             </pre>
-          </OutlineCard>
-        </Flex>
-        <Flex className="steps__container">
-          <Flex className="steps__textContainer">
-            <Text className="steps__heading">At vero eos et accusamus et iusto odio dignissimos</Text>
-            <Text className="steps__text">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-              dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
-              ea commodo consequat.
-            </Text>
-          </Flex>
-          <OutlineCard className="steps__visual">
-            <Image src={WasmLogo} style={{ maxWidth: '7rem' }} />
           </OutlineCard>
         </Flex>
       </Flex>
