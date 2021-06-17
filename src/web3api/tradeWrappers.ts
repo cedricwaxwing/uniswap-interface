@@ -10,7 +10,7 @@ import {
   W3TxOverrides,
   W3TxResponse
 } from './types'
-import { ipfsUri } from './constants'
+import { ensUri } from './constants'
 import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
 import { chainIdToName } from './utils'
@@ -19,7 +19,7 @@ export async function w3TradeExecutionPrice(client: Web3ApiClient, trade: W3Trad
   const query = await client.query<{
     tradeExecutionPrice: string
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
         tradeExecutionPrice(
           trade: $trade
@@ -50,7 +50,7 @@ export async function w3bestTradeExactIn(
   const query = await client.query<{
     bestTradeExactIn: W3Trade[]
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
         bestTradeExactIn(
           pairs: $pairs
@@ -87,7 +87,7 @@ export async function w3bestTradeExactOut(
   const query = await client.query<{
     bestTradeExactOut: W3Trade[]
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
         bestTradeExactOut(
           pairs: $pairs
@@ -122,7 +122,7 @@ export async function w3TradeMaximumAmountIn(
   const query = await client.query<{
     tradeMaximumAmountIn: W3TokenAmount
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
         tradeMaximumAmountIn(
           trade: $trade
@@ -153,7 +153,7 @@ export async function w3TradeMinimumAmountOut(
   const query = await client.query<{
     tradeMinimumAmountOut: W3TokenAmount
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
         tradeMinimumAmountOut(
           trade: $trade
@@ -184,7 +184,7 @@ export async function w3SwapCallParameters(
   const query = await client.query<{
     swapCallParameters: W3SwapParameters
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
       swapCallParameters(
         trade: $trade
@@ -211,7 +211,7 @@ export async function w3TradeSlippage(client: Web3ApiClient, trade: W3Trade): Pr
   const query = await client.query<{
     tradeSlippage: string
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
         tradeSlippage(
           trade: $trade
@@ -241,7 +241,7 @@ export async function w3ExecCall(
   const query = await client.query<{
     execCall: W3TxResponse
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `mutation {
       execCall(
         parameters: $parameters
@@ -277,7 +277,7 @@ export async function w3EstimateGas(
   const query = await client.query<{
     estimateGas: string
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
       estimateGas(
         parameters: $parameters
@@ -309,7 +309,7 @@ export async function w3ExecCallStatic(
   const query = await client.query<{
     execCallStatic: string
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
         execCallStatic(
           parameters: $parameters
@@ -341,7 +341,7 @@ export async function w3Approve(
   const query = await client.query<{
     approve: W3TxResponse
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `mutation {
         approve(
           token: $token
@@ -370,7 +370,7 @@ export async function w3PairAddress(client: Web3ApiClient, token0: W3Token, toke
   const query = await client.query<{
     pairAddress: string
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `
       query {
         pairAddress(

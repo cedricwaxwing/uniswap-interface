@@ -1,13 +1,13 @@
 import { W3TokenAmount, W3Trade } from './types'
 import Decimal from 'decimal.js'
-import { ipfsUri } from './constants'
+import { ensUri } from './constants'
 import { useWeb3ApiQuery } from '@web3api/react'
 
 export async function useTradeExecutionPrice(trade: W3Trade | undefined): Promise<Decimal | undefined> {
   const { execute } = useWeb3ApiQuery<{
     tradeExecutionPrice: W3TokenAmount
   }>({
-    uri: ipfsUri,
+    uri: ensUri,
     query: `query {
         tradeExecutionPrice(
           trade: $trade
