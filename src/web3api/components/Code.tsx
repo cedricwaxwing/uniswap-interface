@@ -35,7 +35,7 @@ const Code = (props: React.PropsWithChildren<Props>) => {
 
   const queryA = `
 Web3Api.query({
-    uri: ipfsUri,
+    uri: ensUri,
     query: \`query {
       bestTradeExactIn(
         pairs: $pairs,
@@ -74,7 +74,7 @@ Web3Api.query({
 
   const queryB = `
 Web3Api.query({
-    uri: ipfsUri,
+    uri: ensUri,
     query: \`query {
       swapCallParameters(
         trade: $trade,
@@ -99,7 +99,7 @@ Web3Api.query({
 
   const queryC = `
 Web3Api.query({
-    uri: ipfsUri,
+    uri: ensUri,
     query: \`mutation {
       execCall(
         parameters: $parameters,

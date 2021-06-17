@@ -13,7 +13,7 @@ import { OutlineCard } from '../../components/Card/index'
 
 const query = `
   Web3Api.query({
-      uri: ipfsUri,
+      uri: ensUri,
       query: \`query {
           bestTradeExactIn(
             pairs: $pairs
