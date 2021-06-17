@@ -131,10 +131,8 @@
   "dependencies": {
     "@types/prismjs": "^1.16.5",
     "@uniswap/default-token-list": "^2.0.0",
-    "@web3api/client-js": "0.0.1-prealpha.25",
-    "@web3api/ethereum-plugin-js": "0.0.1-prealpha.25",
-    "@web3api/react": "0.0.1-prealpha.25",
-    "@web3api/sha3-plugin-js": "file:/home/kris/WebstormProjects/Web3-API/monorepo/packages/js/plugins/sha3",
+    "@web3api/client-js": "0.0.1-prealpha.26",
+    "@web3api/react": "0.0.1-prealpha.26",
     "decimal.js": "^10.2.1"
   }
 }
