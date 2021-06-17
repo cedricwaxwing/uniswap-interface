@@ -86,8 +86,7 @@ export function useApproveCallback(
     const gasMargin = calculateGasMargin(BigNumber.from(estimatedGas))
 
     return w3Approve(client, token, useExact ? amountToApprove.amount : undefined, {
-      gasLimit: gasMargin.toString(),
-      gasPrice: null
+      gasLimit: gasMargin.toString()
     })
       .then((response: W3TxResponse) => {
         addTransaction(response, {

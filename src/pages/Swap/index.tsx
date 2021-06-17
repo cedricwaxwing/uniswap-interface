@@ -114,7 +114,7 @@ export default function Swap({ history }: RouteComponentProps) {
   const [tradeExecutionPrice, setTradeExecutionPrice] = useState<Decimal | undefined>(undefined)
 
   const { currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync } = useDerivedSwapInfo()
-  const v2TradeAsyncDebounced = useDebounce(v2TradeAsync, 400)
+  const v2TradeAsyncDebounced = useDebounce(v2TradeAsync, 300)
 
   useEffect(() => {
     const updateTradeAsync = async () => {

@@ -190,7 +190,7 @@ export function useSwapCallback(
 
         const gasMargin = calculateGasMargin(BigNumber.from(gasEstimate))
 
-        return w3ExecCall(client, parameters, chainId, { gasLimit: gasMargin.toString(), gasPrice: null })
+        return w3ExecCall(client, parameters, chainId, { gasLimit: gasMargin.toString() })
           .then((response: W3TxResponse) => {
             const inputSymbol = trade.inputAmount.token.currency.symbol
             const outputSymbol = trade.outputAmount.token.currency.symbol
