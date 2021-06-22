@@ -7,11 +7,11 @@ import { useEagerConnect, useInactiveListener } from '../../hooks'
 import { NetworkContextName } from '../../constants'
 import Loader from '../Loader'
 import { UriRedirect } from '@web3api/client-js'
-import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 import { Web3ApiProvider } from '@web3api/react'
 import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
 import { sha3Plugin } from '@web3api/sha3-plugin-js'
 import { networks } from 'web3api/constants'
+import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 
 const MessageWrapper = styled.div`
   display: flex;
