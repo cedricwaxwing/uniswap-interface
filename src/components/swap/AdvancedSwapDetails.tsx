@@ -47,7 +47,7 @@ function TradeSummary({ trade, allowedSlippage }: { trade: W3Trade; allowedSlipp
       setRealizedLPFee(realizedLPFee ?? undefined)
     }
     updateStateAsync()
-  }, [trade, allowedSlippage, client])
+  }, [trade, allowedSlippage])
 
   const isExactIn = trade.tradeType === W3TradeType.EXACT_INPUT
 

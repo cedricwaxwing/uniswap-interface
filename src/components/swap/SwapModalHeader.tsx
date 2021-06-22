@@ -46,7 +46,7 @@ export default function SwapModalHeader({
       setPriceImpactWithoutFee(priceImpactWithoutFee)
     }
     updateStateAsync()
-  }, [trade, allowedSlippage, client])
+  }, [trade, allowedSlippage])
 
   const priceImpactSeverity = warningSeverity(priceImpactWithoutFee)
 

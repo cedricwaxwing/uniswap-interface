@@ -10,6 +10,11 @@ import { UriRedirect } from '@web3api/client-js'
 import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 import { Web3ApiProvider } from '@web3api/react'
 import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
+import { sha3Plugin } from '@web3api/sha3-plugin-js'
+import { Web3Provider } from '@ethersproject/providers'
+import { getSigner } from '../../utils'
+import { ethers } from 'ethers'
+import { EthereumProvider, EthereumSigner } from '@web3api/client-js/build/pluginConfigs/Ethereum'
 
 const MessageWrapper = styled.div`
   display: flex;
@@ -24,14 +29,18 @@ const Message = styled.h2`
 
 export default function Web3ReactManager({ children }: { children: JSX.Element }) {
   const { t } = useTranslation()
-  const { active, account } = useWeb3React()
+  const { active, account, library } = useWeb3React()
   const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
 
   // Web3API integration.
-  const [ethConfig, setEthConfig] = useState<{ provider: string; signer: string | undefined }>({
-    provider: network.provider.url,
-    signer: account ?? undefined
+  const [ethConfig, setEthConfig] = useState<{
+    provider: EthereumProvider | string
+    signer: EthereumSigner | undefined
+  }>({
+    provider: (library as EthereumProvider) ?? network.provider.url ?? ethers.getDefaultProvider(),
+    signer: account ? getSigner(library, account) : undefined
   })
+
   const redirects: UriRedirect[] = [
     {
       from: 'ens/ethereum.web3api.eth',
@@ -66,6 +75,10 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
       to: ipfsPlugin({
         provider: 'https://ipfs.io'
       })
+    },
+    {
+      from: 'w3://ens/sha3.web3api.eth',
+      to: sha3Plugin()
     }
   ]
 
@@ -77,8 +90,11 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
     if (triedEager && !networkActive && !networkError && !active) {
       activateNetwork(network)
     }
-    setEthConfig({ provider: network.provider.url, signer: account ?? undefined })
-  }, [triedEager, networkActive, networkError, activateNetwork, active, account])
+    setEthConfig({
+      provider: (library as Web3Provider) ?? network.provider.url ?? ethers.getDefaultProvider(),
+      signer: account ? getSigner(library, account) : undefined
+    })
+  }, [triedEager, networkActive, networkError, activateNetwork, active, account, library])
 
   // when there's no account connected, react to logins (broadly speaking) on the injected provider, if it exists
   useInactiveListener(!triedEager)

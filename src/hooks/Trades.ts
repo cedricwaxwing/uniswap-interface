@@ -186,7 +186,6 @@ export function useTradeExactIn(currencyAmountIn?: W3TokenAmount, currencyOut?: 
   const client: Web3ApiClient = useWeb3ApiClient()
 
   return useMemo(() => bestExactIn(client, allowedPairs, singleHopOnly, currencyAmountIn, currencyOut), [
-    client,
     allowedPairs,
     singleHopOnly,
     currencyAmountIn,
@@ -203,7 +202,6 @@ export function useTradeExactOut(currencyIn?: W3Token, currencyAmountOut?: W3Tok
   const client: Web3ApiClient = useWeb3ApiClient()
 
   return useMemo(() => bestExactOut(client, allowedPairs, singleHopOnly, currencyIn, currencyAmountOut), [
-    client,
     allowedPairs,
     singleHopOnly,
     currencyIn,

@@ -81,22 +81,26 @@ export interface W3Log {
   logIndex: number
 }
 
+export interface W3TxResponse {
+  hash: string
+}
+
 export interface W3TxReceipt {
-  to: string
-  from: string
-  contractAddress: string
-  transactionIndex: number
-  root: string
-  gasUsed: string
-  logsBloom: string
-  blockHash: string
+  // to: string
+  // from: string
+  // contractAddress: string
+  // transactionIndex: number
+  // root: string
+  // gasUsed: string
+  // logsBloom: string
+  // blockHash: string
   transactionHash: string
-  logs: W3Log[]
-  blockNumber: number
-  confirmations: number
+  // logs: W3Log[]
+  // blockNumber: number
+  // confirmations: number
   cumulativeGasUsed: string
-  byzantium: boolean
-  status: number
+  // byzantium: boolean
+  // status: number
 }
 
 export interface W3TxOverrides {

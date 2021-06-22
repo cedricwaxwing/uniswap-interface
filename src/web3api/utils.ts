@@ -25,8 +25,8 @@ export function isToken(object: unknown): object is W3Token {
   )
 }
 
-export function tokenEquals(tokenA: W3Token, tokenB: W3Token): boolean {
-  return tokenA.chainId === tokenB.chainId && tokenA.address === tokenB.address
+export function tokenEquals(tokenA?: W3Token, tokenB?: W3Token): boolean {
+  return tokenA?.chainId === tokenB?.chainId && tokenA?.address === tokenB?.address
 }
 
 export function currencyEquals(currencyA: W3Currency, currencyB: W3Currency): boolean {

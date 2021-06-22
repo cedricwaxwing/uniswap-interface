@@ -6,7 +6,7 @@ import { useHasPendingApproval, useW3TransactionAdder } from '../state/transacti
 import { calculateGasMargin } from '../utils'
 import { useTokenContract } from './useContract'
 import { useActiveWeb3React } from './index'
-import { W3TokenAmount, W3Trade, W3TxReceipt } from '../web3api/types'
+import { W3TokenAmount, W3Trade, W3TxResponse } from '../web3api/types'
 import { isEther } from '../web3api/utils'
 import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
@@ -89,8 +89,8 @@ export function useApproveCallback(
       gasLimit: gasMargin.toString(),
       gasPrice: null
     })
-      .then((receipt: W3TxReceipt) => {
-        addTransaction(receipt, {
+      .then((response: W3TxResponse) => {
+        addTransaction(response, {
           summary: 'Approve ' + amountToApprove.token.currency.symbol,
           approval: { tokenAddress: token.address, spender: spender }
         })
