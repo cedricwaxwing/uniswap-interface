@@ -7,10 +7,8 @@ import { useEagerConnect, useInactiveListener } from '../../hooks'
 import { NetworkContextName } from '../../constants'
 import Loader from '../Loader'
 import { UriRedirect } from '@web3api/client-js'
-import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
 import { Web3ApiProvider } from '@web3api/react'
 import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
-import { sha3Plugin } from '@web3api/sha3-plugin-js'
 import { JsonRpcSigner, Web3Provider } from '@ethersproject/providers'
 import { getSigner } from '../../utils'
 import { ethers } from 'ethers'
@@ -65,16 +63,6 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
         },
         defaultNetwork: 'MAINNET'
       })
-    },
-    {
-      from: 'w3://ens/ipfs.web3api.eth',
-      to: ipfsPlugin({
-        provider: 'https://ipfs.io'
-      })
-    },
-    {
-      from: 'w3://ens/sha3.web3api.eth',
-      to: sha3Plugin()
     }
   ]
 

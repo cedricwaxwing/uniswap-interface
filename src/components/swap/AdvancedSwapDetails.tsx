@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import styled, { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { useUserSlippageTolerance } from '../../state/user/hooks'
-import { TYPE, ExternalLink } from '../../theme'
+import { ExternalLink, TYPE } from '../../theme'
 import { w3ComputeSlippageAdjustedAmounts, w3computeTradePriceBreakdown } from '../../utils/prices'
 import { AutoColumn } from '../Column'
 import QuestionHelper from '../QuestionHelper'
@@ -12,9 +12,9 @@ import SwapRoute from './SwapRoute'
 import { W3TokenAmount, W3Trade, W3TradeType } from '../../web3api/types'
 import Decimal from 'decimal.js'
 import { toSignificant } from '../../web3api/utils'
-import { reverseMapPair } from '../../web3api/mapping'
 import { Web3ApiClient } from '@web3api/client-js'
-import { useWeb3ApiClient } from '@web3api/react'
+import { useWeb3ApiClient, useWeb3ApiQuery } from '@web3api/react'
+import { ensUri } from '../../web3api/constants'
 
 const InfoLink = styled(ExternalLink)`
   display: none;
@@ -108,6 +108,35 @@ export function AdvancedSwapDetails({ trade }: AdvancedSwapDetailsProps) {
 
   const [allowedSlippage] = useUserSlippageTolerance()
 
+  const pair =
+    trade?.tradeType === W3TradeType.EXACT_INPUT
+      ? trade?.route.pairs[0]
+      : trade?.route.pairs[trade?.route.pairs.length - 1]
+  const pairAddressQuery = useWeb3ApiQuery<{
+    pairAddress: string
+  }>({
+    uri: ensUri,
+    query: `
+        query {
+          pairAddress(
+            token0: $token0
+            token1: $token1
+          )
+        }
+      `,
+    variables: {
+      token0: pair?.tokenAmount0.token,
+      token1: pair?.tokenAmount1.token
+    }
+  })
+
+  const [pairAddress, setPairAddress] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    pairAddressQuery.execute().then(pairAddressExec => {
+      setPairAddress(pairAddressExec.data?.pairAddress)
+    })
+  }, [pair])
+
   const showRoute = Boolean(trade && trade.route.path.length > 2)
 
   return (
@@ -131,10 +160,7 @@ export function AdvancedSwapDetails({ trade }: AdvancedSwapDetailsProps) {
             )}
             {!showRoute && (
               <AutoColumn style={{ padding: '12px 16px 0 16px' }}>
-                <InfoLink
-                  href={'https://info.uniswap.org/pair/' + reverseMapPair(trade.route.pairs[0]).liquidityToken.address}
-                  target="_blank"
-                >
+                <InfoLink href={'https://info.uniswap.org/pair/' + pairAddress} target="_blank">
                   View pair analytics ↗
                 </InfoLink>
               </AutoColumn>
