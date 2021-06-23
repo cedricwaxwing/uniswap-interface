@@ -12,6 +12,7 @@ import { ethereumPlugin } from '@web3api/ethereum-plugin-js'
 import { sha3Plugin } from '@web3api/sha3-plugin-js'
 import { networks } from 'web3api/constants'
 import { ipfsPlugin } from '@web3api/ipfs-plugin-js'
+import { ethers } from 'ethers'
 
 const MessageWrapper = styled.div`
   display: flex;
@@ -30,7 +31,13 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
   const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
 
   // Web3API integration.
-  const [networksConfig, setNetworksConfig] = useState<any>({})
+  const [networksConfig, setNetworksConfig] = useState<any>({
+    networks: {
+      mainnet: {
+        provider: ethers.getDefaultProvider()
+      }
+    }
+  })
 
   const redirects: UriRedirect[] = [
     {
@@ -57,9 +64,6 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
     if (triedEager && !networkActive && !networkError && !active) {
       activateNetwork(network)
     }
-  }, [triedEager, networkActive, networkError, activateNetwork, active, account, library])
-
-  useEffect(() => {
     if (chainId && library) {
       const id = chainId.toString()
       const currentNetwork = networks[id]
@@ -74,7 +78,9 @@ export default function Web3ReactManager({ children }: { children: JSX.Element }
         defaultNetwork: currentNetwork.name
       })
     }
-  }, [library, chainId])
+  }, [library, chainId, triedEager, networkActive, networkError, activateNetwork, active, account])
+
+  // useEffect(() => {}, [library, chainId])
 
   // when there's no account connected, react to logins (broadly speaking) on the injected provider, if it exists
   useInactiveListener(!triedEager)

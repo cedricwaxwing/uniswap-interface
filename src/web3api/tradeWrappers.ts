@@ -15,6 +15,8 @@ import { ensUri } from './constants'
 import Decimal from 'decimal.js'
 import { Web3ApiClient } from '@web3api/client-js'
 import { chainIdToName } from './utils'
+// import { useCallback } from 'react'
+import { useWeb3ApiQuery } from '@web3api/react'
 
 export async function w3TradeExecutionPrice(client: Web3ApiClient, trade: W3Trade): Promise<Decimal> {
   const query = await client.query<{
@@ -239,6 +241,7 @@ export async function w3ExecCall(
   chainId: W3ChainId,
   txOverrides?: W3TxOverrides
 ): Promise<W3TxResponse> {
+  console.log('This is being triggered!')
   const query = await client.query<{
     execCall: W3TxResponse
   }>({
@@ -256,6 +259,7 @@ export async function w3ExecCall(
       txOverrides: txOverrides ?? {}
     }
   })
+  console.log('Si llega hasta aqui se abre metamask por Dios')
   const result: W3TxResponse | undefined = query.data?.execCall
   if (!result) {
     if (query.errors) {
@@ -267,11 +271,47 @@ export async function w3ExecCall(
   return result
 }
 
+export const useEstimateGas = () => {
+  const { execute } = useWeb3ApiQuery({
+    uri: ensUri,
+    query: `query {
+      estimateGas(
+        parameters: $parameters
+        chainId: $chainId
+       )
+     }`
+  })
+  const estimateGas = async ({
+    parameters,
+    chainId
+  }: {
+    parameters: W3SwapParameters
+    chainId: W3ChainId
+  }): Promise<string> => {
+    console.log({ parameters })
+    console.log({ chainId })
+    const { data, errors } = await execute({
+      parameters,
+      chainId: chainIdToName(chainId)
+    })
+    if (errors) {
+      console.log('Error :( -> ', errors)
+      throw Error('Error on useEstimateGas')
+    }
+    console.log('Success!: ', data)
+
+    return data?.estimateGas as string
+  }
+
+  return estimateGas
+}
+
 export async function w3EstimateGas(
   client: Web3ApiClient,
   parameters: W3SwapParameters,
   chainId: W3ChainId
 ): Promise<string> {
+  console.log('trigerring estimateGas: ')
   const query = await client.query<{
     estimateGas: string
   }>({
