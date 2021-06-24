@@ -318,8 +318,11 @@ export default function Header() {
           <StyledNavLink id={`howitworks-nav-link`} to={'/howitworks'}>
             {t('How It Works')}
           </StyledNavLink>
-          <StyledExternalLink id={`stake-nav-link`} href={'https://docs.web3api.dev'}>
+          <StyledExternalLink id={`docs-nav-link`} href={'https://docs.web3api.dev'}>
             Documentation <span style={{ fontSize: '11px' }}>↗</span>
+          </StyledExternalLink>
+          <StyledExternalLink id={`ens-nav-link`} href={'https://app.ens.domains/name/v2.uniswap.web3api.eth'}>
+            ENS <span style={{ fontSize: '11px' }}>↗</span>
           </StyledExternalLink>
         </HeaderLinks>
       </HeaderRow>

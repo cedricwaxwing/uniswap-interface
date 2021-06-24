@@ -2,6 +2,7 @@ import {
   W3BestTradeOptions,
   W3ChainId,
   W3Pair,
+  W3StaticTxResult,
   W3SwapParameters,
   W3Token,
   W3TokenAmount,
@@ -252,7 +253,7 @@ export async function w3ExecCall(
     variables: {
       parameters: parameters,
       chainId: chainIdToName(chainId),
-      txOverrides: txOverrides ?? { gasLimit: null, gasPrice: null }
+      txOverrides: txOverrides ?? {}
     }
   })
   const result: W3TxResponse | undefined = query.data?.execCall
@@ -307,7 +308,7 @@ export async function w3ExecCallStatic(
   chainId: W3ChainId
 ): Promise<string> {
   const query = await client.query<{
-    execCallStatic: string
+    execCallStatic: W3StaticTxResult
   }>({
     uri: ensUri,
     query: `query {
@@ -321,7 +322,7 @@ export async function w3ExecCallStatic(
       chainId: chainIdToName(chainId)
     }
   })
-  const result: string | undefined = query.data?.execCallStatic
+  const result: W3StaticTxResult | undefined = query.data?.execCallStatic
   if (result === undefined) {
     if (query.errors) {
       throw Error(query.errors.map(e => e.message).toString())
@@ -329,7 +330,7 @@ export async function w3ExecCallStatic(
       throw Error('Unknown Web3API query error; query result data is undefined')
     }
   }
-  return result
+  return result.error ? result.result : ''
 }
 
 export async function w3Approve(
@@ -352,7 +353,7 @@ export async function w3Approve(
     variables: {
       token: token,
       amount: amountToApprove ?? '115792089237316195423570985008687907853269984665640564039457584007913129639935',
-      overrides: txOverrides ?? { gasPrice: null, gasLimit: null }
+      overrides: txOverrides ?? {}
     }
   })
   const result: W3TxResponse | undefined = query.data?.approve

@@ -69,8 +69,40 @@ export interface W3TradeOptions {
   feeOnTransfer?: boolean
 }
 
+export interface W3TxOverrides {
+  gasPrice?: string
+  gasLimit?: string
+}
+
+export interface W3TxResponse {
+  hash: string
+  to?: string
+  from: string
+  nonce: number
+  gasLimit: string
+  gasPrice: string
+  data: string
+  value: string
+  chainId: number
+  blockNumber?: string
+  blockHash?: string
+  timestamp?: number
+  confirmations: number
+  raw?: string
+  r?: string
+  s?: string
+  v?: number
+  type?: number
+  accessList?: W3Access[]
+}
+
+export interface W3StaticTxResult {
+  result: string
+  error: boolean
+}
+
 export interface W3Log {
-  blockNumber: number
+  blockNumber: string
   blockHash: string
   transactionIndex: number
   removed: boolean
@@ -81,29 +113,7 @@ export interface W3Log {
   logIndex: number
 }
 
-export interface W3TxResponse {
-  hash: string
-}
-
-export interface W3TxReceipt {
-  // to: string
-  // from: string
-  // contractAddress: string
-  // transactionIndex: number
-  // root: string
-  // gasUsed: string
-  // logsBloom: string
-  // blockHash: string
-  transactionHash: string
-  // logs: W3Log[]
-  // blockNumber: number
-  // confirmations: number
-  cumulativeGasUsed: string
-  // byzantium: boolean
-  // status: number
-}
-
-export interface W3TxOverrides {
-  gasPrice: string | null
-  gasLimit: string | null
+export interface W3Access {
+  address: string
+  storageKeys: string[]
 }

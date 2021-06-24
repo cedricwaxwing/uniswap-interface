@@ -49,7 +49,7 @@ import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter
 import { RouteComponentProps } from 'react-router-dom'
 import { W3Token, W3TokenAmount, W3Trade } from '../../web3api/types'
 import { mapToken, reverseMapToken } from '../../web3api/mapping'
-import { isEther, isToken, toExact, tokenEquals, toSignificant } from '../../web3api/utils'
+import { currencyEquals, isEther, isToken, toExact, toSignificant } from '../../web3api/utils'
 import { Currency } from '@uniswap/sdk'
 import { w3TradeExecutionPrice } from '../../web3api/tradeWrappers'
 import { Web3ApiClient } from '@web3api/client-js'
@@ -114,15 +114,15 @@ export default function Swap({ history }: RouteComponentProps) {
   const [tradeExecutionPrice, setTradeExecutionPrice] = useState<Decimal | undefined>(undefined)
 
   const { currencies, currencyBalances, parsedAmount, v2TradeAsync, inputErrorAsync } = useDerivedSwapInfo()
-  const v2TradeAsyncDebounced = useDebounce(v2TradeAsync, 400)
+  const v2TradeAsyncDebounced = useDebounce(v2TradeAsync, 300)
 
   useEffect(() => {
     const updateTradeAsync = async () => {
       const bestTrade = (await v2TradeAsyncDebounced) ?? undefined
       if (
         bestTrade &&
-        tokenEquals(bestTrade?.inputAmount.token, currencies.INPUT) &&
-        tokenEquals(bestTrade?.outputAmount.token, currencies.OUTPUT) &&
+        currencyEquals(bestTrade?.inputAmount.token.currency, currencies.INPUT?.currency) &&
+        currencyEquals(bestTrade?.outputAmount.token.currency, currencies.OUTPUT?.currency) &&
         (independentField === Field.INPUT
           ? parsedAmount?.amount === bestTrade?.inputAmount.amount
           : parsedAmount?.amount === bestTrade?.outputAmount.amount)
@@ -138,8 +138,8 @@ export default function Swap({ history }: RouteComponentProps) {
       const bestTrade = v2Trade
       if (
         bestTrade &&
-        tokenEquals(bestTrade?.inputAmount.token, currencies.INPUT) &&
-        tokenEquals(bestTrade?.outputAmount.token, currencies.OUTPUT) &&
+        currencyEquals(bestTrade?.inputAmount.token.currency, currencies.INPUT?.currency) &&
+        currencyEquals(bestTrade?.outputAmount.token.currency, currencies.OUTPUT?.currency) &&
         (independentField === Field.INPUT
           ? parsedAmount?.amount === bestTrade?.inputAmount.amount
           : parsedAmount?.amount === bestTrade?.outputAmount.amount)
