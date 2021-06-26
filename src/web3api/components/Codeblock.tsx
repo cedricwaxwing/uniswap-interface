@@ -3,7 +3,7 @@ import styled from 'styled-components'
 import { Image, Flex } from 'rebass'
 import Code from './Code'
 import CodeToggle from './CodeToggle'
-import { ButtonLight } from '../../components/Button'
+import { ButtonPolywrap } from '../../components/Button'
 import { W3Token } from '../types'
 import './prism.css'
 import W3ToolTip from './W3ToolTip'
@@ -55,24 +55,24 @@ const Codeblock = (props: React.PropsWithChildren<Props>) => {
       <Flex className="codeBlock">
         <Flex className="codeBlock__select">
           <Flex className="codeBlock__btnContainer">
-            <ButtonLight onClick={queryAHandler} className="codeBlock__btn">
+            <ButtonPolywrap onClick={queryAHandler} className="codeBlock__btn">
               bestTradeExactIn
               <W3ToolTip text="Given a list of pairs, a fixed amount in, and token amount out, this method returns the best maxNumResults trades that swap an input token amount to an output token, making at most maxHops hops. The returned trades are sorted by output amount, in decreasing order, and all share the given input amount. " />
-            </ButtonLight>
+            </ButtonPolywrap>
             <Image className="codeBlock__arrow" src={Arrow} />
           </Flex>
           <Flex className="codeBlock__btnContainer">
-            <ButtonLight onClick={queryBHandler} className="codeBlock__btn">
+            <ButtonPolywrap onClick={queryBHandler} className="codeBlock__btn">
               swapCallParameters
               <W3ToolTip text="swapCallParameters accepts a Trade and a set of trade options as input. It transforms the trade into parameter values that can later be used to submit an Ethereum transaction that will execute the trade in Uniswap's smart contracts." />
-            </ButtonLight>
+            </ButtonPolywrap>
             <Image className="codeBlock__arrow" src={Arrow} />
           </Flex>
           <Flex className="codeBlock__btnContainer">
-            <ButtonLight onClick={queryCHandler} className="codeBlock__btn">
+            <ButtonPolywrap onClick={queryCHandler} className="codeBlock__btn">
               execCall
               <W3ToolTip text="Using the output of swapCallParameters, execCall submits an Ethereum transaction and returns the transaction hash that uniquely identifies it on the Ethereum blockchain." />
-            </ButtonLight>
+            </ButtonPolywrap>
           </Flex>
         </Flex>
         <Flex className="codeBlock__toggle">

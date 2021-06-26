@@ -5,7 +5,7 @@ import { NavLink } from 'react-router-dom'
 import { darken } from 'polished'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
-import W3Logo from '../../assets/images/web3api-logo.png'
+import PolywrapLogo from '../../assets/images/polywrap-logo.png'
 import LogoDark from '../../assets/svg/logo_white.svg'
 import { useActiveWeb3React } from '../../hooks'
 import { useETHBalances, useAggregateUniBalance } from '../../state/wallet/hooks'
@@ -308,12 +308,12 @@ export default function Header() {
         <UniBalanceContent setShowUniBalanceModal={setShowUniBalanceModal} />
       </Modal>
       <HeaderRow>
-        <Image sx={{ width: '5.5rem', marginLeft: '1rem' }} src={W3Logo} />
-        <Image sx={{ width: '4.5rem', marginLeft: '1rem' }} src={LogoDark} />
+        <Image sx={{ width: '3.0rem', marginLeft: '1rem' }} src={PolywrapLogo} />
+        <Image sx={{ width: '2.5rem', marginLeft: '1rem' }} src={LogoDark} />
         <Title href="."></Title>
         <HeaderLinks>
           <StyledNavLink id={`swap-nav-link`} to={'/swap'}>
-            {t('Uni v2 Web3API Demo')}
+            {t('Uni v2 <> Polywrap Demo')}
           </StyledNavLink>
           <StyledNavLink id={`howitworks-nav-link`} to={'/howitworks'}>
             {t('How It Works')}

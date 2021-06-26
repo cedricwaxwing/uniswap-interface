@@ -55,7 +55,6 @@ import { w3TradeExecutionPrice } from '../../web3api/tradeWrappers'
 import { Web3ApiClient } from '@web3api/client-js'
 import { useWeb3ApiClient } from '@web3api/react'
 import Codeblock from '../../web3api/components/Codeblock'
-import Background from '../../web3api/components/Background'
 import useDebounce from '../../hooks/useDebounce'
 
 export default function Swap({ history }: RouteComponentProps) {
@@ -355,7 +354,6 @@ export default function Swap({ history }: RouteComponentProps) {
 
   return (
     <>
-      <Background />
       <TokenWarningModal
         isOpen={importTokensNotInDefault.length > 0 && !dismissTokenWarning}
         tokens={importTokensNotInDefault}

@@ -178,6 +178,24 @@ export const ButtonUNIGradient = styled(ButtonPrimary)`
     opacity: 0.9;
   }
 `
+export const ButtonPolywrap = styled(ButtonPrimary)`
+  color: white;
+  padding: 4px 8px;
+  height: 36px;
+  font-weight: 500;
+  border: 1px solid white;
+  background: transparent;
+  width: fit-content;
+  position: relative;
+  cursor: pointer;
+  white-space: no-wrap;
+  :hover {
+    opacity: 0.8;
+  }
+  :active {
+    opacity: 0.9;
+  }
+`
 
 export const ButtonOutlined = styled(Base)`
   border: 1px solid ${({ theme }) => theme.bg2};
