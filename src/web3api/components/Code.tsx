@@ -34,7 +34,7 @@ const Code = (props: React.PropsWithChildren<Props>) => {
   }, [input, currencies, slippage, recipient, output, query, toggle])
 
   const queryA = `
-Web3Api.query({
+Client.query({
     uri: ensUri,
     query: \`query {
       bestTradeExactIn(
@@ -73,7 +73,7 @@ Web3Api.query({
 `.trim()
 
   const queryB = `
-Web3Api.query({
+Client.query({
     uri: ensUri,
     query: \`query {
       swapCallParameters(
@@ -98,7 +98,7 @@ Web3Api.query({
   `
 
   const queryC = `
-Web3Api.query({
+Client.query({
     uri: ensUri,
     query: \`mutation {
       execCall(
